@@ -1,0 +1,201 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { 
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function userRecord() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRestaurantAccess(restaurantId) {
+      return isSignedIn() && userRecord().restaurantId == restaurantId;
+    }
+
+    // ----------------------------------------------------------------------
+    // USERS (Perfis de Usuário)
+    // ----------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || existing().restaurantId == userRecord().restaurantId);
+      allow list: if isSignedIn() && existing().restaurantId == userRecord().restaurantId;
+      
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                    incoming().keys().hasAll(['name', 'email', 'role', 'restaurantId']);
+                    
+      allow update: if isSignedIn() && isValidId(userId) && (
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['name'])) ||
+        (existing().restaurantId == userRecord().restaurantId && userRecord().role == 'Admin' && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'restaurantId']))
+      );
+                    
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------------------------
+    // RESTAURANTS
+    // ----------------------------------------------------------------------
+    match /restaurants/{restaurantId} {
+      allow get: if hasRestaurantAccess(restaurantId) && isValidId(restaurantId);
+      allow list: if isSignedIn() && existing().id == userRecord().restaurantId;
+
+      allow create: if isSignedIn() && isValidId(restaurantId) && 
+                    incoming().keys().hasAll(['name', 'ownerId']) &&
+                    incoming().ownerId == request.auth.uid;
+      
+      allow update: if hasRestaurantAccess(restaurantId) && isValidId(restaurantId) && 
+                    userRecord().role == 'Admin' &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name']);
+                    
+      allow delete: if false;
+
+      // ----------------------------------------------------------------------
+      // TABLES
+      // ----------------------------------------------------------------------
+      match /tables/{tableId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['tableNumber', 'status', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(tableId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['tableNumber', 'capacity', 'status', 'totalAmount']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // ORDERS
+      // ----------------------------------------------------------------------
+      match /orders/{orderId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['restaurantId', 'orderType', 'status', 'totalAmount']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(orderId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['status', 'totalAmount', 'items', 'orderType', 'customerName', 'tableId']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // INGREDIENTS
+      // ----------------------------------------------------------------------
+      match /ingredients/{ingredientId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['name', 'quantity', 'unit', 'cost', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(ingredientId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'quantity', 'unit', 'cost', 'status', 'minStock', 'category', 'imageUrl', 'expirationDate']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // SHOPPING LIST ITEMS
+      // ----------------------------------------------------------------------
+      match /shoppingListItems/{itemId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['name', 'quantityToBuy', 'unit', 'purchased', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(itemId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'quantityToBuy', 'unit', 'purchased', 'category', 'inventoryItemId']);
+        allow delete: if hasRestaurantAccess(restaurantId);
+      }
+
+      // ----------------------------------------------------------------------
+      // DELIVERY PLATFORMS
+      // ----------------------------------------------------------------------
+      match /deliveryPlatforms/{platformId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['name', 'commissionPercentage', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(platformId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'commissionPercentage']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // MATERIALS
+      // ----------------------------------------------------------------------
+      match /materials/{materialId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['name', 'category', 'quantity', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(materialId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'subCategory', 'quantity', 'status', 'purchaseDate', 'purchaseValue']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // UNIFORMS
+      // ----------------------------------------------------------------------
+      match /uniforms/{uniformId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['name', 'size', 'quantity', 'category', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(uniformId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'size', 'quantity', 'category']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // WORK SHIFTS
+      // ----------------------------------------------------------------------
+      match /workShifts/{shiftId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['userId', 'date', 'startTime', 'endTime', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(shiftId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['userId', 'userName', 'date', 'startTime', 'endTime', 'breakMinutes', 'totalHours']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // WASTE RECORDS
+      // ----------------------------------------------------------------------
+      match /wasteRecords/{wasteId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['type', 'date', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(wasteId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['type', 'description', 'date', 'photoUrl', 'weight', 'justification']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+
+      // ----------------------------------------------------------------------
+      // PRODUCTION TASKS
+      // ----------------------------------------------------------------------
+      match /productionTasks/{taskId} {
+        allow read: if hasRestaurantAccess(restaurantId);
+        allow create: if hasRestaurantAccess(restaurantId) && 
+                      incoming().keys().hasAll(['taskName', 'assignedUserId', 'date', 'completed', 'restaurantId']) &&
+                      incoming().restaurantId == restaurantId;
+        allow update: if hasRestaurantAccess(restaurantId) && isValidId(taskId) &&
+                      incoming().restaurantId == existing().restaurantId &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['taskName', 'description', 'assignedUserId', 'assignedUserName', 'date', 'completed', 'completedAt', 'createdBy']);
+        allow delete: if hasRestaurantAccess(restaurantId) && userRecord().role == 'Admin';
+      }
+    }
+  }
+}
+

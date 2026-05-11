@@ -1,0 +1,363 @@
+
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "type": "object",
+      "description": "Restaurante principal que gerencia a suite.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "Table": {
+      "title": "Table",
+      "type": "object",
+      "description": "Mesa física no restaurante.",
+      "properties": {
+        "id": { "type": "string" },
+        "tableNumber": { "type": "string" },
+        "capacity": { "type": "number" },
+        "status": { "type": "string", "enum": ["Livre", "Ocupada", "Aguardando Conta"] },
+        "totalAmount": { "type": "number" },
+        "occupants": { "type": "number" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "tableNumber", "status", "restaurantId"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Pedido de cliente (Mesa ou Take-away).",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "tableId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "contact": { "type": "string" }
+            }
+          }
+        },
+        "orderType": { "type": "string", "enum": ["Dine-in", "Take-away"] },
+        "status": { "type": "string", "enum": ["Pending", "Preparing", "Ready", "Served", "Completed"] },
+        "activeCourse": { "type": "string", "enum": ["Entradas", "Pratos Principais", "Sobremesas", "Finalizado"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" },
+              "course": { "type": "string", "enum": ["Entrada", "Prato Principal", "Sobremesa", "Bebida"] },
+              "status": { "type": "string", "enum": ["Pending", "Preparing", "Ready", "Served"] }
+            }
+          }
+        },
+        "totalAmount": { "type": "number" },
+        "orderDateTime": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "restaurantId", "orderType", "status", "totalAmount"]
+    },
+    "Ingredient": {
+      "title": "Ingredient",
+      "type": "object",
+      "description": "Item de estoque/insumo.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "cost": { "type": "number", "description": "Custo ativo ou médio usado nos cálculos." },
+        "suppliers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "cost": { "type": "number" },
+              "unit": { "type": "string" },
+              "lastPurchaseDate": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "status": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "minStock": { "type": "number" },
+        "category": { "type": "string" },
+        "expirationDate": { "type": "string", "format": "date" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "quantity", "unit", "cost", "restaurantId"]
+    },
+    "Material": {
+      "title": "Material",
+      "type": "object",
+      "description": "Equipamentos, utensílios e materiais de uso contínuo.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Cozinha", "Salão"] },
+        "subCategory": { "type": "string" },
+        "quantity": { "type": "number" },
+        "status": { "type": "string", "enum": ["Novo", "Bom", "Manutenção", "Substituir"] },
+        "purchaseDate": { "type": "string", "format": "date" },
+        "purchaseValue": { "type": "number" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "quantity", "restaurantId"]
+    },
+    "Uniform": {
+      "title": "Uniform",
+      "type": "object",
+      "description": "Item de enxoval/uniforme da equipe.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "size": { "type": "string" },
+        "quantity": { "type": "number" },
+        "category": { "type": "string", "enum": ["Doma", "Calça", "Sapato", "Acessório"] },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "size", "quantity", "category", "restaurantId"]
+    },
+    "WorkShift": {
+      "title": "WorkShift",
+      "type": "object",
+      "description": "Registro de turno de trabalho e banco de horas.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "breakMinutes": { "type": "number" },
+        "totalHours": { "type": "number" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "startTime", "endTime", "restaurantId"]
+    },
+    "WasteRecord": {
+      "title": "WasteRecord",
+      "type": "object",
+      "description": "Registro de desperdício de alimentos (Food Waste).",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["Vencido/Estragado", "Retorno da Mesa", "Produção Excessiva"] },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "photoUrl": { "type": "string", "description": "Data URI da foto capturada." },
+        "weight": { "type": "number", "description": "Peso em kg." },
+        "justification": { "type": "string" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "type", "date", "restaurantId"]
+    },
+    "ProductionTask": {
+      "title": "ProductionTask",
+      "type": "object",
+      "description": "Tarefa de produção atribuída a um funcionário específico.",
+      "properties": {
+        "id": { "type": "string" },
+        "taskName": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedUserId": { "type": "string" },
+        "assignedUserName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "taskName", "assignedUserId", "date", "completed", "restaurantId"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Perfil de usuário e nível de acesso.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "Chefe", "Apoio", "Serviço", "Caixa", "Barman", "Horista", "Passe"] },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "restaurantId"]
+    },
+    "ShoppingListItem": {
+      "title": "ShoppingListItem",
+      "type": "object",
+      "description": "Item na lista de compras.",
+      "properties": {
+        "id": { "type": "string" },
+        "inventoryItemId": { "type": "string" },
+        "name": { "type": "string" },
+        "quantityToBuy": { "type": "number" },
+        "unit": { "type": "string" },
+        "category": { "type": "string" },
+        "purchased": { "type": "boolean" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "quantityToBuy", "unit", "purchased", "restaurantId"]
+    },
+    "DeliveryPlatform": {
+      "title": "DeliveryPlatform",
+      "type": "object",
+      "description": "Plataforma de delivery configurada.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "commissionPercentage": { "type": "number" },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "name", "commissionPercentage", "restaurantId"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "type": "object",
+      "description": "Reserva de mesa ou banquete.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerContact": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "guestsCount": { "type": "number" },
+        "tableId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pendente", "Confirmada", "Cancelada", "Concluída"] },
+        "type": { "type": "string", "enum": ["Individual", "Banquete"] },
+        "notes": { "type": "string" },
+        "banquetDetails": {
+          "type": "object",
+          "properties": {
+            "menuSelection": { "type": "string" },
+            "layoutNotes": { "type": "string" },
+            "specialRequirements": { "type": "string" }
+          }
+        },
+        "restaurantId": { "type": "string" }
+      },
+      "required": ["id", "customerName", "date", "time", "guestsCount", "status", "type", "restaurantId"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "anonymous"]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/restaurants/{restaurantId}",
+        "definition": {
+          "entityName": "Restaurant",
+          "schema": { "$ref": "#/backend/entities/Restaurant" },
+          "description": "Raiz do restaurante."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/tables/{tableId}",
+        "definition": {
+          "entityName": "Table",
+          "schema": { "$ref": "#/backend/entities/Table" },
+          "description": "Mesas do restaurante."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": { "$ref": "#/backend/entities/Order" },
+          "description": "Pedidos em tempo real."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/ingredients/{ingredientId}",
+        "definition": {
+          "entityName": "Ingredient",
+          "schema": { "$ref": "#/backend/entities/Ingredient" },
+          "description": "Inventário de insumos."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/materials/{materialId}",
+        "definition": {
+          "entityName": "Material",
+          "schema": { "$ref": "#/backend/entities/Material" },
+          "description": "Inventário de materiais e equipamentos."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/uniforms/{uniformId}",
+        "definition": {
+          "entityName": "Uniform",
+          "schema": { "$ref": "#/backend/entities/Uniform" },
+          "description": "Controle de uniformes."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/workShifts/{shiftId}",
+        "definition": {
+          "entityName": "WorkShift",
+          "schema": { "$ref": "#/backend/entities/WorkShift" },
+          "description": "Registro de turnos e horas."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/wasteRecords/{wasteId}",
+        "definition": {
+          "entityName": "WasteRecord",
+          "schema": { "$ref": "#/backend/entities/WasteRecord" },
+          "description": "Registros de desperdício."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/productionTasks/{taskId}",
+        "definition": {
+          "entityName": "ProductionTask",
+          "schema": { "$ref": "#/backend/entities/ProductionTask" },
+          "description": "Atribuição de tarefas diretas."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/shoppingListItems/{itemId}",
+        "definition": {
+          "entityName": "ShoppingListItem",
+          "schema": { "$ref": "#/backend/entities/ShoppingListItem" },
+          "description": "Itens da lista de compras da loja."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/deliveryPlatforms/{platformId}",
+        "definition": {
+          "entityName": "DeliveryPlatform",
+          "schema": { "$ref": "#/backend/entities/DeliveryPlatform" },
+          "description": "Plataformas de delivery do restaurante."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/reservations/{reservationId}",
+        "definition": {
+          "entityName": "Reservation",
+          "schema": { "$ref": "#/backend/entities/Reservation" },
+          "description": "Reservas e banquetes."
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "Perfis de usuários globais."
+        }
+      }
+    ]
+  }
+}

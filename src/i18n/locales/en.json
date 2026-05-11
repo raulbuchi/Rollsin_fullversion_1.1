@@ -1,0 +1,179 @@
+{
+  "landing": {
+    "title": "ROLLS-IN",
+    "subtitle": "Management Excellence",
+    "description": "The definitive solution for cost management, COGS and operation of your restaurant with technological precision and intuitive design.",
+    "buttons": {
+      "login": "Login",
+      "register": "Register Restaurant"
+    },
+    "features": {
+      "financial": {
+        "title": "Financial Management",
+        "description": "Calculation of real COGS based on technical sheets and intelligent pricing with AI support."
+      },
+      "dashboard": {
+        "title": "Dynamic Dashboard",
+        "description": "Complete operational view with daily checklists and real-time shift control."
+      },
+      "inventory": {
+        "title": "Inventory & Stock",
+        "description": "Total control of supplies with support for Brazilian units and automatic deductions on sales."
+      },
+      "team": {
+        "title": "Team Control",
+        "description": "Shift management, time bank with point mirror and personalized permission levels."
+      }
+    },
+    "footer": {
+      "rights": "All rights reserved."
+    }
+  },
+  "sidebar": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "production": "Production Management",
+      "inventory": "Inventory (Supplies)",
+      "materials": "Equipment",
+      "waste": "Food Waste",
+      "uniforms": "Uniforms",
+      "recipes": "Technical Sheets",
+      "schedules": "Schedules & Bank",
+      "checklists": "Checklists",
+      "orders": "Operation (Orders)",
+      "shoppingList": "Shopping List",
+      "sales": "Sales",
+      "reports": "Reports",
+      "settings": "Settings"
+    },
+    "user": {
+      "admin": "Administrator",
+      "user": "User {{role}}"
+    },
+    "logout": "Log Out"
+  },
+  "inventory": {
+    "title": "Inventory Management",
+    "description": "Supplies control and shopping list.",
+    "tabs": {
+      "inventory": "Inventory",
+      "shoppingList": "Shopping List"
+    },
+    "search": "Search supply...",
+    "newIngredient": "New Supply",
+    "table": {
+      "image": "Image",
+      "ingredient": "Supply",
+      "quantity": "Qty",
+      "unit": "Un",
+      "cost": "Cost",
+      "expiration": "Expiration",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "expirationStatus": {
+      "expired": "Expired",
+      "expiresIn": "Expires in {{days}}d",
+      "ok": "On Time"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Add Supply",
+        "save": "Save Supply"
+      },
+      "edit": {
+        "title": "Edit Supply",
+        "save": "Save Changes"
+      },
+      "delete": {
+        "title": "Delete Supply?",
+        "description": "Are you sure you want to remove \"{{name}}\" from inventory? This action cannot be undone.",
+        "confirm": "Confirm Deletion"
+      }
+    },
+    "fields": {
+      "name": "Name",
+      "category": "Category",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "cost": "Unit Cost ($)",
+      "minStock": "Minimum Stock",
+      "expirationDate": "Expiration Date",
+      "selectDate": "Select a date",
+      "upload": "Upload"
+    },
+    "categories": {
+      "Hortifruti": "Produce",
+      "Carnes": "Meats",
+      "Laticínios": "Dairy",
+      "Mercearia": "Grocery",
+      "Bebidas": "Beverages",
+      "Limpeza": "Cleaning",
+      "Embalagens": "Packaging",
+      "Outros": "Others"
+    },
+    "status": {
+      "critical": "Critical",
+      "normal": "Normal"
+    },
+    "units": {
+      "custom": "Custom...",
+      "placeholder": "Ex: bunch"
+    },
+    "empty": "No supplies found. Start by adding a new item.",
+    "toasts": {
+      "success": "Success",
+      "added": "Supply added to stock.",
+      "updated": "Supply updated successfully.",
+      "removed": "Removed",
+      "deleted": "The item was deleted from inventory."
+    }
+  },
+  "shoppingList": {
+    "search": "Search list...",
+    "smartSuggestion": "Smart Suggestion",
+    "newItem": "New Item",
+    "dialogs": {
+      "add": {
+        "title": "Add to Shopping List",
+        "inventorySelect": "Select from Inventory (Optional)",
+        "placeholder": "Select a supply...",
+        "standaloneItem": "Standalone Item (Not in inventory)",
+        "save": "Add to List"
+      },
+      "delete": {
+        "title": "Remove from List?",
+        "description": "Are you sure you want to remove \"{{name}}\" from your shopping list?",
+        "confirm": "Confirm"
+      }
+    },
+    "fields": {
+      "quantityToBuy": "Quantity to Buy"
+    },
+    "table": {
+      "status": "Status",
+      "item": "Item",
+      "quantity": "Quantity",
+      "origin": "Origin"
+    },
+    "badges": {
+      "inventory": "Inventory",
+      "standalone": "Standalone"
+    },
+    "empty": "Your shopping list is empty.",
+    "toasts": {
+      "suggestionGenerated": "Suggestion Generated",
+      "suggestionDescription": "{{count}} low stock items were added.",
+      "allGood": "All Good",
+      "allGoodDescription": "No low stock items found that are not already on the list.",
+      "added": "Item added to shopping list."
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Error"
+  }
+}

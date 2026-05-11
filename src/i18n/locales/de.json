@@ -1,0 +1,179 @@
+{
+  "landing": {
+    "title": "ROLLS-IN",
+    "subtitle": "Exzellenz im Management",
+    "description": "Die definitive Lösung für Kostenverwaltung, Wareneinsatz (CMV) und den Betrieb Ihres Restaurants mit technologischer Präzision und intuitivem Design.",
+    "buttons": {
+      "login": "Anmelden",
+      "register": "Restaurant Registrieren"
+    },
+    "features": {
+      "financial": {
+        "title": "Finanzmanagement",
+        "description": "Berechnung des realen Wareneinsatzes basierend auf Rezepturen und intelligente Preisgestaltung mit KI-Unterstützung."
+      },
+      "dashboard": {
+        "title": "Dynamisches Dashboard",
+        "description": "Vollständige operative Übersicht mit täglichen Checklisten und Schichtkontrolle in Echtzeit."
+      },
+      "inventory": {
+        "title": "Inventar & Lager",
+        "description": "Vollständige Kontrolle über Zutaten mit Unterstützung für brasilianische Einheiten und automatischer Bestandsminderung bei Verkäufen."
+      },
+      "team": {
+        "title": "Teamkontrolle",
+        "description": "Management von Schichtplänen, Arbeitszeitkonto mit Zeitspiegel und personalisierten Berechtigungsstufen."
+      }
+    },
+    "footer": {
+      "rights": "Alle Rechte vorbehalten."
+    }
+  },
+  "sidebar": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "production": "Produktionsmanagement",
+      "inventory": "Inventar (Zutaten)",
+      "materials": "Ausrüstung",
+      "waste": "Lebensmittelabfall",
+      "uniforms": "Uniformen",
+      "recipes": "Rezepturen",
+      "schedules": "Dienstpläne & Zeitkonto",
+      "checklists": "Checklisten",
+      "orders": "Betrieb (Bestellungen)",
+      "shoppingList": "Einkaufsliste",
+      "sales": "Verkäufe",
+      "reports": "Berichte",
+      "settings": "Einstellungen"
+    },
+    "user": {
+      "admin": "Administrator",
+      "user": "Benutzer {{role}}"
+    },
+    "logout": "Abmelden"
+  },
+  "inventory": {
+    "title": "Inventarverwaltung",
+    "description": "Kontrolle von Zutaten und Einkaufsliste.",
+    "tabs": {
+      "inventory": "Inventar",
+      "shoppingList": "Einkaufsliste"
+    },
+    "search": "Zutat suchen...",
+    "newIngredient": "Neue Zutat",
+    "table": {
+      "image": "Bild",
+      "ingredient": "Zutat",
+      "quantity": "Menge",
+      "unit": "Einh.",
+      "cost": "Kosten",
+      "expiration": "Haltbarkeit",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "expirationStatus": {
+      "expired": "Abgelaufen",
+      "expiresIn": "Läuft ab in {{days}}T",
+      "ok": "Im Zeitplan"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Zutat Hinzufügen",
+        "save": "Zutat Speichern"
+      },
+      "edit": {
+        "title": "Zutat Bearbeiten",
+        "save": "Änderungen Speichern"
+      },
+      "delete": {
+        "title": "Zutat Löschen?",
+        "description": "Sind Sie sicher, dass Sie \"{{name}}\" aus dem Inventar entfernen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Löschen Bestätigen"
+      }
+    },
+    "fields": {
+      "name": "Name",
+      "category": "Kategorie",
+      "quantity": "Menge",
+      "unit": "Einheit",
+      "cost": "Einzelkosten (€)",
+      "minStock": "Mindestbestand",
+      "expirationDate": "Verfallsdatum",
+      "selectDate": "Datum auswählen",
+      "upload": "Hochladen"
+    },
+    "categories": {
+      "Hortifruti": "Obst & Gemüse",
+      "Carnes": "Fleisch",
+      "Laticínios": "Molkereiprodukte",
+      "Mercearia": "Lebensmittel",
+      "Bebidas": "Getränke",
+      "Limpeza": "Reinigung",
+      "Embalagens": "Verpackung",
+      "Outros": "Sonstiges"
+    },
+    "status": {
+      "critical": "Kritisch",
+      "normal": "Normal"
+    },
+    "units": {
+      "custom": "Benutzerdefiniert...",
+      "placeholder": "Z.B.: Bund"
+    },
+    "empty": "Keine Zutaten gefunden. Fügen Sie zunächst einen neuen Artikel hinzu.",
+    "toasts": {
+      "success": "Erfolg",
+      "added": "Zutat zum Lager hinzugefügt.",
+      "updated": "Zutat erfolgreich aktualisiert.",
+      "removed": "Entfernt",
+      "deleted": "Der Artikel wurde aus dem Inventar gelöscht."
+    }
+  },
+  "shoppingList": {
+    "search": "Liste durchsuchen...",
+    "smartSuggestion": "Intelligenter Vorschlag",
+    "newItem": "Neuer Artikel",
+    "dialogs": {
+      "add": {
+        "title": "Zur Einkaufsliste Hinzufügen",
+        "inventorySelect": "Aus Inventar auswählen (Optional)",
+        "placeholder": "Wählen Sie eine Zutat...",
+        "standaloneItem": "Einzelartikel (Nicht im Inventar)",
+        "save": "Zur Liste Hinzufügen"
+      },
+      "delete": {
+        "title": "Von Liste Entfernen?",
+        "description": "Sind Sie sicher, dass Sie \"{{name}}\" von Ihrer Einkaufsliste entfernen möchten?",
+        "confirm": "Bestätigen"
+      }
+    },
+    "fields": {
+      "quantityToBuy": "Kaufmenge"
+    },
+    "table": {
+      "status": "Status",
+      "item": "Artikel",
+      "quantity": "Menge",
+      "origin": "Herkunft"
+    },
+    "badges": {
+      "inventory": "Inventar",
+      "standalone": "Einzeln"
+    },
+    "empty": "Ihre Einkaufsliste ist leer.",
+    "toasts": {
+      "suggestionGenerated": "Vorschlag Erstellt",
+      "suggestionDescription": "{{count}} Artikel mit geringem Bestand wurden hinzugefügt.",
+      "allGood": "Alles Bestens",
+      "allGoodDescription": "Es wurden keine Artikel mit geringem Bestand gefunden, die nicht bereits auf der Liste stehen.",
+      "added": "Artikel zur Einkaufsliste hinzugefügt."
+    }
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "save": "Speichern",
+    "loading": "Laden...",
+    "error": "Fehler"
+  }
+}

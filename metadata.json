@@ -1,0 +1,5 @@
+{
+  "name": "Rollsin vs1.1",
+  "description": "Rollsin Fullversion vs1.1",
+  "requestFramePermissions": ["camera"]
+}

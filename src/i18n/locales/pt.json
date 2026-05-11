@@ -1,0 +1,179 @@
+{
+  "landing": {
+    "title": "ROLLS-IN",
+    "subtitle": "Excelência em Gestão",
+    "description": "A solução definitiva para gestão de custos, CMV e operação do seu restaurante com precisão tecnológica e design intuitivo.",
+    "buttons": {
+      "login": "Fazer Login",
+      "register": "Registrar Restaurante"
+    },
+    "features": {
+      "financial": {
+        "title": "Gestão Financeira",
+        "description": "Cálculo de CMV real baseado em fichas técnicas e precificação inteligente com suporte de IA."
+      },
+      "dashboard": {
+        "title": "Dashboard Dinâmico",
+        "description": "Visão operacional completa com checklists diários e controle de jornada em tempo real."
+      },
+      "inventory": {
+        "title": "Inventário & Estoque",
+        "description": "Controle total de insumos com suporte a unidades brasileiras e baixa automática em vendas."
+      },
+      "team": {
+        "title": "Controle de Equipe",
+        "description": "Gestão de escalas, banco de horas com espelho de ponto e níveis de permissão personalizados."
+      }
+    },
+    "footer": {
+      "rights": "Todos os direitos reservados."
+    }
+  },
+  "sidebar": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "production": "Gestão de Produção",
+      "inventory": "Estoque (Insumos)",
+      "materials": "Equipamentos",
+      "waste": "Food Waste (Perdas)",
+      "uniforms": "Uniformes",
+      "recipes": "Fichas Técnicas",
+      "schedules": "Escalas & Banco",
+      "checklists": "Checklists",
+      "orders": "Operação (Pedidos)",
+      "shoppingList": "Lista de Compras",
+      "sales": "Vendas",
+      "reports": "Relatórios",
+      "settings": "Configurações"
+    },
+    "user": {
+      "admin": "Administrador",
+      "user": "Usuário {{role}}"
+    },
+    "logout": "Sair do Sistema"
+  },
+  "inventory": {
+    "title": "Gestão de Inventário",
+    "description": "Controle de insumos e lista de compras.",
+    "tabs": {
+      "inventory": "Inventário",
+      "shoppingList": "Lista de Compras"
+    },
+    "search": "Buscar insumo...",
+    "newIngredient": "Novo Insumo",
+    "table": {
+      "image": "Imagem",
+      "ingredient": "Insumo",
+      "quantity": "Qtd",
+      "unit": "Un",
+      "cost": "Custo",
+      "expiration": "Validade",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "expirationStatus": {
+      "expired": "Vencido",
+      "expiresIn": "Vence em {{days}}d",
+      "ok": "No Prazo"
+    },
+    "dialogs": {
+      "add": {
+        "title": "Adicionar Insumo",
+        "save": "Salvar Insumo"
+      },
+      "edit": {
+        "title": "Editar Insumo",
+        "save": "Salvar Alterações"
+      },
+      "delete": {
+        "title": "Excluir Insumo?",
+        "description": "Tem certeza que deseja remover \"{{name}}\" do inventário? Esta ação não pode ser desfeita.",
+        "confirm": "Confirmar Exclusão"
+      }
+    },
+    "fields": {
+      "name": "Nome",
+      "category": "Categoria",
+      "quantity": "Quantidade",
+      "unit": "Unidade",
+      "cost": "Custo Unitário (R$)",
+      "minStock": "Estoque Mínimo",
+      "expirationDate": "Data de Validade",
+      "selectDate": "Selecione uma data",
+      "upload": "Upload"
+    },
+    "categories": {
+      "Hortifruti": "Hortifruti",
+      "Carnes": "Carnes",
+      "Laticínios": "Laticínios",
+      "Mercearia": "Mercearia",
+      "Bebidas": "Bebidas",
+      "Limpeza": "Limpeza",
+      "Embalagens": "Embalagens",
+      "Outros": "Outros"
+    },
+    "status": {
+      "critical": "Crítico",
+      "normal": "Normal"
+    },
+    "units": {
+      "custom": "Personalizada...",
+      "placeholder": "Ex: maço"
+    },
+    "empty": "Nenhum insumo encontrado. Comece adicionando um novo item.",
+    "toasts": {
+      "success": "Sucesso",
+      "added": "Insumo adicionado ao estoque.",
+      "updated": "Insumo atualizado com sucesso.",
+      "removed": "Removido",
+      "deleted": "O item foi excluído do inventário."
+    }
+  },
+  "shoppingList": {
+    "search": "Buscar na lista...",
+    "smartSuggestion": "Sugestão Inteligente",
+    "newItem": "Novo Item",
+    "dialogs": {
+      "add": {
+        "title": "Adicionar à Lista de Compras",
+        "inventorySelect": "Selecionar do Inventário (Opcional)",
+        "placeholder": "Selecione um insumo...",
+        "standaloneItem": "Item Avulso (Não está no inventário)",
+        "save": "Adicionar à Lista"
+      },
+      "delete": {
+        "title": "Remover da Lista?",
+        "description": "Tem certeza que deseja remover \"{{name}}\" da sua lista de compras?",
+        "confirm": "Confirmar"
+      }
+    },
+    "fields": {
+      "quantityToBuy": "Quantidade a Comprar"
+    },
+    "table": {
+      "status": "Status",
+      "item": "Item",
+      "quantity": "Quantidade",
+      "origin": "Origem"
+    },
+    "badges": {
+      "inventory": "Inventário",
+      "standalone": "Avulso"
+    },
+    "empty": "Sua lista de compras está vazia.",
+    "toasts": {
+      "suggestionGenerated": "Sugestão Gerada",
+      "suggestionDescription": "{{count}} itens com estoque baixo foram adicionados.",
+      "allGood": "Tudo Certo",
+      "allGoodDescription": "Nenhum item com estoque baixo encontrado que já não esteja na lista.",
+      "added": "Item adicionado à lista de compras."
+    }
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Salvar",
+    "loading": "Carregando...",
+    "error": "Erro"
+  }
+}
