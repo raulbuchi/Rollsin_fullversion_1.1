@@ -33,6 +33,7 @@ interface ExtractedItem {
   cost: number;
   matchedId?: string; // If we found an existing item to update
   category?: string; // So user can categorize
+  expirationDate?: string | null;
 }
 
 const CATEGORIES = ['Hortifruti', 'Carnes', 'Laticínios', 'Mercearia', 'Bebidas', 'Limpeza', 'Embalagens', 'Outros']
@@ -145,6 +146,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
           updateDocumentNonBlocking(doc(colRef, match.id), {
             quantity: match.quantity + Number(item.quantity),
             cost: Number(item.cost), // update to latest cost
+            expirationDate: item.expirationDate || match.expirationDate || null
           })
         } else {
           // Create new
@@ -158,7 +160,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
             imageUrl: null,
             minStock: 0,
             category: item.category || 'Outros',
-            expirationDate: null
+            expirationDate: item.expirationDate || null
           })
         }
       }
@@ -262,7 +264,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
             <div className="border rounded-md divide-y overflow-hidden max-h-[50vh] overflow-y-auto">
               {extractedItems.map((item, index) => (
                 <div key={item.id} className="p-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-card">
-                  <div className="md:col-span-4 space-y-2">
+                  <div className="md:col-span-3 space-y-2">
                     <Label className="text-xs text-muted-foreground">Nome (Lido da Nota)</Label>
                     <Input 
                       value={item.name} 
@@ -282,6 +284,14 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
                     </Select>
                   </div>
                   <div className="md:col-span-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Validade</Label>
+                    <Input 
+                      type="date"
+                      value={item.expirationDate || ''} 
+                      onChange={(e) => handleItemChange(item.id, 'expirationDate', e.target.value)} 
+                    />
+                  </div>
+                  <div className="md:col-span-1 space-y-2">
                     <Label className="text-xs text-muted-foreground">Qtd</Label>
                     <Input 
                       type="number"

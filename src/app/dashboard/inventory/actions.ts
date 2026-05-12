@@ -10,6 +10,7 @@ const ReceiptSchema = z.object({
       quantity: z.number(),
       unit: z.enum(["kg", "un", "L", "g", "ml"]),
       cost: z.number(),
+      expirationDate: z.string().optional().nullable(),
     })
   )
 });
@@ -33,7 +34,7 @@ export async function extractReceiptItems(imageBase64: string) {
       ? imageBase64.split(",")[0].split(":")[1].split(";")[0] 
       : "image/jpeg";
 
-    const prompt = "Analise a imagem deste cupom fiscal ou nota fiscal. Extraia todos os itens comprados (insumos). Retorne um JSON estritamente no seguinte formato: { \"items\": [ { \"name\": \"Nome do Item\", \"quantity\": 1.0, \"unit\": \"un|kg|L|g|ml\", \"cost\": 10.0 } ] }. Calcule adequadamente o custo *unitário* de cada item. Tente deduzir a unidade (kg, un, L, g, ml) baseando-se na descrição ou quantidade.";
+    const prompt = "Analise a imagem deste cupom fiscal ou nota fiscal. Extraia todos os itens comprados (insumos). Retorne um JSON estritamente no seguinte formato: { \"items\": [ { \"name\": \"Nome do Item\", \"quantity\": 1.0, \"unit\": \"un|kg|L|g|ml\", \"cost\": 10.0, \"expirationDate\": \"YYYY-MM-DD\" } ] }. Calcule adequadamente o custo *unitário* de cada item. Tente deduzir a unidade (kg, un, L, g, ml) baseando-se na descrição ou quantidade. Se a data de validade estiver visível ou puder ser inferida, inclua no formato YYYY-MM-DD, caso contrário retorne null.";
 
     const result = await model.generateContent([
       prompt,

@@ -31,8 +31,18 @@ import {
   FileDown,
   Printer,
   ChefHat,
-  Timer
+  Timer,
+  Eye,
+  Calendar
 } from 'lucide-react'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, limit } from 'firebase/firestore'
 import { format } from 'date-fns'
@@ -63,6 +73,18 @@ interface WorkShift {
   userName: string
   totalHours: number
   date: string
+  startTime: string
+  endTime: string
+  breakMinutes?: number
+  userId: string
+}
+
+interface UserProfile {
+  id: string
+  name: string
+  email: string
+  role: string
+  restaurantId: string
 }
 
 const COLORS = ['#2D855A', '#84DB84', '#15803d', '#4ade80', '#065f46']
@@ -72,6 +94,7 @@ export default function ReportsPage() {
   const { user } = useUser()
   const restaurantId = 'gp-001'
   const [activeTab, setActiveTab] = useState('financeiro')
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
 
   // Queries simplificadas para evitar erros de índice composto
   const tasksQuery = useMemoFirebase(() => {
@@ -86,12 +109,24 @@ export default function ReportsPage() {
 
   const shiftsQuery = useMemoFirebase(() => {
     if (!db) return null
-    return query(collection(db, 'restaurants', restaurantId, 'workShifts'), limit(200))
+    return query(collection(db, 'restaurants', restaurantId, 'workShifts'), limit(500))
+  }, [db])
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(collection(db, 'users'), limit(100))
   }, [db])
 
   const { data: rawTasks } = useCollection<ProductionTask>(tasksQuery)
   const { data: rawWaste } = useCollection<WasteRecord>(wasteQuery)
   const { data: rawShifts } = useCollection<WorkShift>(shiftsQuery)
+  const { data: rawUsers } = useCollection<UserProfile>(usersQuery)
+
+  // Filtrar usuários do restaurante atual
+  const restaurantUsers = useMemo(() => {
+    if (!rawUsers) return []
+    return rawUsers.filter(u => u.restaurantId === restaurantId)
+  }, [rawUsers])
 
   // Cálculos de Produtividade com ordenação client-side
   const productivityData = useMemo(() => {
@@ -113,6 +148,42 @@ export default function ReportsPage() {
     })).sort((a, b) => b.taxa - a.taxa)
   }, [rawTasks])
 
+  // Cálculo de Banco de Horas
+  const hoursBankData = useMemo(() => {
+    if (!rawShifts) return []
+    const bank: Record<string, { userId: string, name: string, totalHours: number, shiftsCount: number }> = {}
+    
+    // Primeiro populamos com todos os funcionários do restaurante
+    restaurantUsers.forEach(u => {
+      bank[u.id] = { userId: u.id, name: u.name, totalHours: 0, shiftsCount: 0 }
+    })
+
+    // Depois somamos as horas dos turnos
+    rawShifts.forEach(s => {
+      const uId = s.userId
+      if (!bank[uId]) {
+        // Fallback caso o usuário não esteja na lista de perfis mas tenha turnos
+        bank[uId] = { userId: uId, name: s.userName || 'Usuário Desconhecido', totalHours: 0, shiftsCount: 0 }
+      }
+      bank[uId].totalHours += s.totalHours || 0
+      bank[uId].shiftsCount += 1
+    })
+
+    return Object.values(bank).sort((a, b) => b.totalHours - a.totalHours)
+  }, [rawShifts, restaurantUsers])
+
+  const selectedEmployeeShifts = useMemo(() => {
+    if (!selectedEmployeeId || !rawShifts) return []
+    return rawShifts
+      .filter(s => s.userId === selectedEmployeeId)
+      .sort((a, b) => b.date.localeCompare(a.date))
+  }, [selectedEmployeeId, rawShifts])
+
+  const selectedEmployeeData = useMemo(() => {
+    if (!selectedEmployeeId) return null
+    return hoursBankData.find(h => h.userId === selectedEmployeeId)
+  }, [selectedEmployeeId, hoursBankData])
+
   // Cálculos de Waste
   const wastePieData = useMemo(() => {
     if (!rawWaste) return []
@@ -122,6 +193,41 @@ export default function ReportsPage() {
     })
     return Object.entries(types).map(([name, value]) => ({ name, value }))
   }, [rawWaste])
+
+  const handleExportIndividualPDF = (employee: any, shifts: WorkShift[]) => {
+    const doc = new jsPDF()
+    const today = format(new Date(), "dd/MM/yyyy HH:mm")
+    
+    doc.setFontSize(20)
+    doc.setTextColor(45, 133, 90)
+    doc.text('ROLLS-IN | EXTRATO INDIVIDUAL', 14, 22)
+    
+    doc.setFontSize(14)
+    doc.setTextColor(50)
+    doc.text(`Colaborador: ${employee.name}`, 14, 32)
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100)
+    doc.text(`Emitido em: ${today}`, 14, 40)
+    doc.text(`Total de Horas Acumuladas: ${employee.totalHours.toFixed(1)}h`, 14, 45)
+
+    const tableData = shifts.map(s => [
+      format(new Date(s.date), 'dd/MM/yyyy'),
+      s.startTime,
+      s.endTime,
+      s.breakMinutes ? `${s.breakMinutes} min` : '0',
+      `${s.totalHours.toFixed(1)}h`
+    ])
+
+    autoTable(doc, {
+      startY: 55,
+      head: [['Data', 'Início', 'Fim', 'Pausa', 'Total']],
+      body: tableData,
+      headStyles: { fillColor: [45, 133, 90] }
+    })
+
+    doc.save(`extrato-horas-${employee.name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+  }
 
   const handleExportPDF = () => {
     const doc = new jsPDF()
@@ -141,6 +247,14 @@ export default function ReportsPage() {
       autoTable(doc, {
         startY: 45,
         head: [['Funcionário', 'Taxa de Conclusão', 'Tarefas Concluídas']],
+        body: tableData,
+        headStyles: { fillColor: [45, 133, 90] }
+      })
+    } else if (activeTab === 'banco-horas') {
+      const tableData = hoursBankData.map(d => [d.name, d.shiftsCount.toString(), `${d.totalHours.toFixed(1)}h`])
+      autoTable(doc, {
+        startY: 45,
+        head: [['Funcionário', 'Total de Turnos', 'Total de Horas']],
         body: tableData,
         headStyles: { fillColor: [45, 133, 90] }
       })
@@ -182,6 +296,7 @@ export default function ReportsPage() {
         <TabsList className="flex w-full overflow-x-auto justify-start bg-muted/20 p-1 mb-8">
           <TabsTrigger value="financeiro" className="gap-2"><DollarSign className="w-4 h-4" /> Financeiro</TabsTrigger>
           <TabsTrigger value="produtividade" className="gap-2"><Users className="w-4 h-4" /> Produtividade</TabsTrigger>
+          <TabsTrigger value="banco-horas" className="gap-2"><Timer className="w-4 h-4" /> Banco de Horas</TabsTrigger>
           <TabsTrigger value="waste" className="gap-2"><Trash2 className="w-4 h-4" /> Food Waste</TabsTrigger>
           <TabsTrigger value="limpeza" className="gap-2"><ClipboardCheck className="w-4 h-4" /> Limpeza & Higiene</TabsTrigger>
         </TabsList>
@@ -276,6 +391,151 @@ export default function ReportsPage() {
                 {productivityData.length === 0 && (
                   <p className="text-center py-10 text-muted-foreground italic">Nenhum dado de produtividade disponível ainda.</p>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="banco-horas" className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <SummaryCard title="Total de Horas (Geral)" value={`${hoursBankData.reduce((acc, v) => acc + v.totalHours, 0).toFixed(0)}h`} trend="Ref. Mês" positive />
+            <SummaryCard title="Média por Funcionário" value={`${(hoursBankData.reduce((acc, v) => acc + v.totalHours, 0) / (hoursBankData.length || 1)).toFixed(1)}h`} trend="Ideal: 160h" positive />
+            <SummaryCard title="Funcionários Ativos" value={hoursBankData.filter(h => h.shiftsCount > 0).length.toString()} trend="Total: 12" positive />
+          </div>
+
+          <Card className="shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="text-lg">Extrato do Banco de Horas</CardTitle>
+                <CardDescription>Resumo de horas acumuladas por colaborador.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b text-muted-foreground uppercase text-[10px] font-bold">
+                      <th className="pb-4 pt-2">Funcionário</th>
+                      <th className="pb-4 pt-2 text-center">Turnos Realizados</th>
+                      <th className="pb-4 pt-2 text-center">Horas Acumuladas</th>
+                      <th className="pb-4 pt-2 text-center">Status</th>
+                      <th className="pb-4 pt-2 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {hoursBankData.map((item, idx) => (
+                      <tr key={idx} className="group hover:bg-muted/30 transition-colors">
+                        <td className="py-4">
+                          <p className="font-bold">{item.name}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase">{restaurantUsers.find(u => u.id === item.userId)?.role || 'Apoio'}</p>
+                        </td>
+                        <td className="py-4 text-center">
+                          <Badge variant="outline" className="font-mono">{item.shiftsCount}</Badge>
+                        </td>
+                        <td className="py-4 text-center">
+                          <span className="text-lg font-black text-primary">{item.totalHours.toFixed(1)}h</span>
+                        </td>
+                        <td className="py-4 text-center">
+                          <Badge className={cn(
+                            item.totalHours > 180 ? "bg-orange-500" : 
+                            item.totalHours < 120 ? "bg-blue-500" : "bg-green-500"
+                          )}>
+                            {item.totalHours > 180 ? "Extra" : item.totalHours < 120 ? "Folguista" : "Regular"}
+                          </Badge>
+                        </td>
+                        <td className="py-4 text-right">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => setSelectedEmployeeId(item.userId)}
+                              >
+                                <Eye className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-2xl font-black font-headline text-primary">
+                                  <Timer className="w-6 h-6" />
+                                  Extrato de Banco de Horas
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Histórico detalhado de turnos para <strong>{item.name}</strong>
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              <div className="mt-6 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                                    <p className="text-[10px] font-bold uppercase text-primary/60 mb-1">Total de Horas</p>
+                                    <p className="text-3xl font-black text-primary">{item.totalHours.toFixed(1)}h</p>
+                                  </div>
+                                  <div className="bg-muted/30 p-4 rounded-xl border border-muted">
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Total de Turnos</p>
+                                    <p className="text-3xl font-black text-muted-foreground">{item.shiftsCount}</p>
+                                  </div>
+                                  <div className="bg-muted/30 p-4 rounded-xl border border-muted">
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Média por Turno</p>
+                                    <p className="text-3xl font-black text-muted-foreground">
+                                      {item.shiftsCount > 0 ? (item.totalHours / item.shiftsCount).toFixed(1) : '0'}h
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="rounded-lg border overflow-hidden">
+                                  <table className="w-full text-sm">
+                                    <thead className="bg-muted/50">
+                                      <tr className="text-left text-[10px] font-bold uppercase text-muted-foreground">
+                                        <th className="px-4 py-3">Data</th>
+                                        <th className="px-4 py-3">Início</th>
+                                        <th className="px-4 py-3">Fim</th>
+                                        <th className="px-4 py-3 text-center">Pausa</th>
+                                        <th className="px-4 py-3 text-right">Total</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                      {selectedEmployeeShifts.map((shift) => (
+                                        <tr key={shift.id} className="hover:bg-muted/20 transition-colors">
+                                          <td className="px-4 py-3 font-medium">
+                                            {format(new Date(shift.date), "dd/MM/yyyy", { locale: ptBR })}
+                                          </td>
+                                          <td className="px-4 py-3">{shift.startTime}</td>
+                                          <td className="px-4 py-3">{shift.endTime}</td>
+                                          <td className="px-4 py-3 text-center text-muted-foreground">
+                                            {shift.breakMinutes ? `${shift.breakMinutes}m` : '-'}
+                                          </td>
+                                          <td className="px-4 py-3 text-right font-bold text-primary">
+                                            {shift.totalHours.toFixed(1)}h
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                <div className="flex justify-end pt-4 border-t">
+                                  <Button 
+                                    className="gap-2"
+                                    onClick={() => handleExportIndividualPDF(item, selectedEmployeeShifts)}
+                                  >
+                                    <FileDown className="w-4 h-4" /> Exportar Extrato Individual
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </td>
+                      </tr>
+                    ))}
+                    {hoursBankData.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-10 text-center text-muted-foreground italic">Nenhum registro de turno encontrado.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>

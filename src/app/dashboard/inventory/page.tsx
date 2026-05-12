@@ -441,7 +441,7 @@ export default function InventoryPage() {
                     <Plus className="w-4 h-4" /> {t('inventory.newIngredient')}
                   </Button>
                 </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t('inventory.dialogs.add.title')}</DialogTitle>
               </DialogHeader>
@@ -528,7 +528,7 @@ export default function InventoryPage() {
                   </div>
                   <div className="space-y-2 col-span-2 lg:col-span-1">
                     <Label>{t('inventory.fields.expirationDate')}</Label>
-                    <Popover>
+                    <Popover modal={false}>
                       <PopoverTrigger asChild>
                         <Button
                           variant={"outline"}
@@ -901,7 +901,7 @@ export default function InventoryPage() {
 
       {/* Dialog de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('inventory.dialogs.edit.title')}</DialogTitle>
           </DialogHeader>
@@ -1007,7 +1007,7 @@ export default function InventoryPage() {
                 </div>
                 <div className="space-y-2 col-span-2 lg:col-span-1">
                   <Label>{t('inventory.fields.expirationDate')}</Label>
-                  <Popover>
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
