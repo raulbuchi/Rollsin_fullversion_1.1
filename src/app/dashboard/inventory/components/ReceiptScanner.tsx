@@ -119,6 +119,30 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
     }])
   }
 
+  const parseExpirationDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null
+    if (dateStr.includes('-')) return dateStr // Already ISO
+    const parts = dateStr.split('/')
+    if (parts.length === 3) {
+      let [d, m, y] = parts
+      if (y.length === 2) y = '20' + y
+      if (d.length === 1) d = '0' + d
+      if (m.length === 1) m = '0' + m
+      if (y.length === 4 && d.length === 2 && m.length === 2) {
+        return `${y}-${m}-${d}`
+      }
+    }
+    return null
+  }
+
+  const formatExpirationDateForInput = (dateStr: string | null | undefined) => {
+    if (!dateStr) return ''
+    if (dateStr.includes('-')) {
+      return dateStr.split('-').reverse().join('/')
+    }
+    return dateStr
+  }
+
   const handleSave = async () => {
     if (!db) return
     if (extractedItems.length === 0) {
@@ -139,6 +163,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
 
         // naive match by name (case-insensitive)
         const match = existingItems.find(ex => ex.name.toLowerCase() === item.name.toLowerCase())
+        const parsedExp = parseExpirationDate(item.expirationDate)
 
         if (match) {
           // Update existing item: sum quantity, update average or last cost
@@ -146,7 +171,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
           updateDocumentNonBlocking(doc(colRef, match.id), {
             quantity: match.quantity + Number(item.quantity),
             cost: Number(item.cost), // update to latest cost
-            expirationDate: item.expirationDate || match.expirationDate || null
+            expirationDate: parsedExp || match.expirationDate || null
           })
         } else {
           // Create new
@@ -160,7 +185,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
             imageUrl: null,
             minStock: 0,
             category: item.category || 'Outros',
-            expirationDate: item.expirationDate || null
+            expirationDate: parsedExp || null
           })
         }
       }
@@ -286,9 +311,20 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
                   <div className="md:col-span-2 space-y-2">
                     <Label className="text-xs text-muted-foreground">Validade</Label>
                     <Input 
-                      type="date"
-                      value={item.expirationDate || ''} 
-                      onChange={(e) => handleItemChange(item.id, 'expirationDate', e.target.value)} 
+                      placeholder="DD/MM/AAAA"
+                      value={formatExpirationDateForInput(item.expirationDate)}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '')
+                        if (val.length > 8) val = val.slice(0, 8)
+                        
+                        let formatted = val
+                        if (val.length > 4) {
+                          formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`
+                        } else if (val.length > 2) {
+                          formatted = `${val.slice(0, 2)}/${val.slice(2)}`
+                        }
+                        handleItemChange(item.id, 'expirationDate', formatted)
+                      }}
                     />
                   </div>
                   <div className="md:col-span-1 space-y-2">

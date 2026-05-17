@@ -253,6 +253,30 @@ export default function InventoryPage() {
     reader.readAsDataURL(file)
   }
 
+  const parseExpirationDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null
+    if (dateStr.includes('-')) return dateStr // Already ISO
+    const parts = dateStr.split('/')
+    if (parts.length === 3) {
+      let [d, m, y] = parts
+      if (y.length === 2) y = '20' + y
+      if (d.length === 1) d = '0' + d
+      if (m.length === 1) m = '0' + m
+      if (y.length === 4 && d.length === 2 && m.length === 2) {
+        return `${y}-${m}-${d}`
+      }
+    }
+    return null
+  }
+
+  const formatExpirationDateForInput = (dateStr: string | null | undefined) => {
+    if (!dateStr) return ''
+    if (dateStr.includes('-')) {
+      return dateStr.split('-').reverse().join('/')
+    }
+    return dateStr
+  }
+
   const handleAddItem = () => {
     if (!newItem.name || !newItem.quantity || !db) return
 
@@ -268,7 +292,7 @@ export default function InventoryPage() {
       imageUrl: newItem.imageUrl || null,
       minStock: parseFloat(newItem.minStock) || 0,
       category: newItem.category || 'Outros',
-      expirationDate: newItem.expirationDate || null
+      expirationDate: parseExpirationDate(newItem.expirationDate)
     })
 
     setNewItem({ name: '', quantity: '', unit: 'kg', cost: '', imageUrl: '', minStock: '', category: 'Outros', expirationDate: '', suppliers: [] })
@@ -289,7 +313,7 @@ export default function InventoryPage() {
       imageUrl: editingItem.imageUrl || null,
       minStock: editingItem.minStock || 0,
       category: editingItem.category || 'Outros',
-      expirationDate: editingItem.expirationDate || null
+      expirationDate: parseExpirationDate(editingItem.expirationDate)
     })
 
     setIsEditDialogOpen(false)
@@ -528,38 +552,22 @@ export default function InventoryPage() {
                   </div>
                   <div className="space-y-2 col-span-2 lg:col-span-1">
                     <Label>{t('inventory.fields.expirationDate')}</Label>
-                    <Popover modal={false}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !newItem.expirationDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {newItem.expirationDate ? (
-                            format(parseISO(newItem.expirationDate), "PPP")
-                          ) : (
-                            <span>{t('inventory.fields.selectDate')}</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={newItem.expirationDate ? parseISO(newItem.expirationDate) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              setNewItem({ ...newItem, expirationDate: format(date, 'yyyy-MM-dd') })
-                            } else {
-                              setNewItem({ ...newItem, expirationDate: '' })
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Input 
+                      placeholder="DD/MM/AAAA"
+                      value={formatExpirationDateForInput(newItem.expirationDate)}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '')
+                        if (val.length > 8) val = val.slice(0, 8)
+                        
+                        let formatted = val
+                        if (val.length > 4) {
+                          formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`
+                        } else if (val.length > 2) {
+                          formatted = `${val.slice(0, 2)}/${val.slice(2)}`
+                        }
+                        setNewItem({ ...newItem, expirationDate: formatted })
+                      }}
+                    />
                   </div>
                 </div>
                 <SupplierManager 
@@ -1007,38 +1015,22 @@ export default function InventoryPage() {
                 </div>
                 <div className="space-y-2 col-span-2 lg:col-span-1">
                   <Label>{t('inventory.fields.expirationDate')}</Label>
-                  <Popover modal={false}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !editingItem.expirationDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {editingItem.expirationDate ? (
-                          format(parseISO(editingItem.expirationDate), "PPP")
-                        ) : (
-                          <span>{t('inventory.fields.selectDate')}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={editingItem.expirationDate ? parseISO(editingItem.expirationDate) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            setEditingItem({ ...editingItem, expirationDate: format(date, 'yyyy-MM-dd') })
-                          } else {
-                            setEditingItem({ ...editingItem, expirationDate: '' })
-                          }
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input 
+                    placeholder="DD/MM/AAAA"
+                    value={formatExpirationDateForInput(editingItem.expirationDate)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '')
+                      if (val.length > 8) val = val.slice(0, 8)
+                      
+                      let formatted = val
+                      if (val.length > 4) {
+                        formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`
+                      } else if (val.length > 2) {
+                        formatted = `${val.slice(0, 2)}/${val.slice(2)}`
+                      }
+                      setEditingItem({ ...editingItem, expirationDate: formatted })
+                    }}
+                  />
                 </div>
               </div>
               <SupplierManager 
