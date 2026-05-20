@@ -88,6 +88,25 @@ interface Employee {
   role: string
 }
 
+const getEmployeeColor = (id: string) => {
+  const colors = [
+    'bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20',
+    'bg-orange-500/10 text-orange-600 border-orange-200 hover:bg-orange-500/20',
+    'bg-amber-500/10 text-amber-600 border-amber-200 hover:bg-amber-500/20',
+    'bg-emerald-500/10 text-emerald-600 border-emerald-200 hover:bg-emerald-500/20',
+    'bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20',
+    'bg-indigo-500/10 text-indigo-600 border-indigo-200 hover:bg-indigo-500/20',
+    'bg-purple-500/10 text-purple-600 border-purple-200 hover:bg-purple-500/20',
+    'bg-pink-500/10 text-pink-600 border-pink-200 hover:bg-pink-500/20',
+  ]
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash) % colors.length
+  return colors[index]
+}
+
 export default function SchedulesPage() {
   const db = useFirestore()
   const { user } = useUser()
@@ -96,6 +115,7 @@ export default function SchedulesPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all')
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false)
+  const [activeAllocationEmployeeId, setActiveAllocationEmployeeId] = useState<string | null>(null)
 
   // Form State
   const [newShiftUserId, setNewShiftUserId] = useState('')
@@ -168,6 +188,23 @@ export default function SchedulesPage() {
     })
 
     setIsShiftDialogOpen(false)
+  }
+
+  const handleDropEmployee = (employeeId: string, dateStr: string) => {
+    if (!db || !employeeId || !dateStr) return
+    const emp = employees?.find(e => e.id === employeeId)
+    const total = calculateHours(startTime, endTime, parseInt(breakMin))
+
+    addDocumentNonBlocking(collection(db, 'restaurants', restaurantId, 'workShifts'), {
+      userId: employeeId,
+      userName: emp?.name || 'Funcionário',
+      date: dateStr,
+      startTime,
+      endTime,
+      breakMinutes: parseInt(breakMin),
+      totalHours: total,
+      restaurantId
+    })
   }
 
   const handleDeleteShift = (id: string) => {
@@ -349,55 +386,198 @@ export default function SchedulesPage() {
         </TabsList>
 
         <TabsContent value="agenda">
-          <Card className="overflow-hidden border-none shadow-lg">
-            <div className="grid grid-cols-7 bg-muted/50 border-b">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="p-3 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">
-                  {day}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 auto-rows-[120px] bg-border gap-px">
-              {calendarDays.map((day, idx) => {
-                const dayStr = format(day, 'yyyy-MM-dd')
-                const isCurrentMonth = getDay(day) >= 0 && day >= startOfMonth(currentMonth) && day <= endOfMonth(currentMonth)
-                const dayShifts = filteredShifts.filter(s => s.date === dayStr)
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+            {/* Quick Scale Panel (Sidebar) */}
+            <Card className="lg:col-span-1 p-5 space-y-4 border border-primary/10 bg-card shadow-sm sticky top-[80px]">
+              <div>
+                <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
+                  <User className="w-4 h-4 text-primary" />
+                  Painel de Escala Rápida
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                  Arraste o colaborador para o calendário ou clique em seu perfil e depois clique na data desejada para escalar de forma rápida.
+                </p>
+              </div>
 
-                return (
-                  <div 
-                    key={idx} 
-                    className={cn(
-                      "bg-background p-2 group transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden",
-                      !isCurrentMonth && "opacity-30 bg-muted/20"
-                    )}
-                    onClick={() => {
-                      if (isCurrentMonth) {
-                        setNewShiftDate(dayStr)
-                        setIsShiftDialogOpen(true)
-                      }
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={cn(
-                        "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
-                        isSameDay(day, new Date()) ? "bg-primary text-primary-foreground" : "text-foreground"
-                      )}>
-                        {format(day, 'd')}
-                      </span>
-                    </div>
-                    <div className="space-y-1 overflow-y-auto max-h-[80px] scrollbar-hide">
-                      {dayShifts.map(s => (
-                        <div key={s.id} className="text-[9px] bg-primary/10 border-l-2 border-primary p-1 rounded-sm leading-tight flex flex-col">
-                          <span className="font-bold truncate text-primary">{s.userName}</span>
-                          <span className="text-muted-foreground">{s.startTime} - {s.endTime}</span>
-                        </div>
-                      ))}
-                    </div>
+              {/* Default Schedule Settings */}
+              <div className="p-3 bg-muted/30 rounded-lg space-y-3 border text-xs">
+                <span className="font-semibold text-[10px] uppercase text-muted-foreground block tracking-wider">
+                  Horário Padrão do Turno:
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px]">Entrada</Label>
+                    <Input 
+                      type="time" 
+                      className="h-7 text-xs px-2" 
+                      value={startTime} 
+                      onChange={(e) => setStartTime(e.target.value)} 
+                    />
                   </div>
-                )
-              })}
-            </div>
-          </Card>
+                  <div className="space-y-1">
+                    <Label className="text-[10px]">Saída</Label>
+                    <Input 
+                      type="time" 
+                      className="h-7 text-xs px-2" 
+                      value={endTime} 
+                      onChange={(e) => setEndTime(e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Pausa (minutos)</Label>
+                  <Input 
+                    type="number" 
+                    className="h-7 text-xs px-2" 
+                    value={breakMin} 
+                    onChange={(e) => setBreakMin(e.target.value)} 
+                  />
+                </div>
+              </div>
+
+              {/* Employee Draggable Badges */}
+              <div className="space-y-2 max-h-[300px] lg:max-h-none overflow-y-auto pr-1">
+                <span className="font-semibold text-[10px] uppercase text-muted-foreground block tracking-wider mb-1">
+                  Colaboradores:
+                </span>
+                {employees?.map((emp) => {
+                  const initials = emp.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                  const isSelected = activeAllocationEmployeeId === emp.id;
+                  const themeClasses = getEmployeeColor(emp.id);
+
+                  return (
+                    <div
+                      key={emp.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('employeeId', emp.id);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      onClick={() => {
+                        if (isSelected) {
+                          setActiveAllocationEmployeeId(null);
+                        } else {
+                          setActiveAllocationEmployeeId(emp.id);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing hover:shadow-sm select-none",
+                        isSelected 
+                          ? "border-primary bg-primary/10 shadow hover:bg-primary/10 scale-[1.02] ring-1 ring-primary" 
+                          : "border-border bg-background hover:bg-muted/10"
+                      )}
+                    >
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 border", themeClasses)}>
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-xs truncate text-foreground">{emp.name}</p>
+                        <p className="text-[9px] text-muted-foreground truncate font-medium">{emp.role}</p>
+                      </div>
+                      <div className="flex flex-col gap-0.5 opacity-40 hover:opacity-80 shrink-0 px-1">
+                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                      </div>
+                    </div>
+                  );
+                })}
+                {employees?.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-4">Nenhum funcionário cadastrado.</p>
+                )}
+              </div>
+            </Card>
+
+            {/* Calendar Agenda Grid */}
+            <Card className="lg:col-span-3 overflow-hidden border border-primary/10 shadow-lg">
+              <div className="grid grid-cols-7 bg-muted/50 border-b">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                  <div key={day} className="p-3 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 auto-rows-[120px] bg-border gap-px">
+                {calendarDays.map((day, idx) => {
+                  const dayStr = format(day, 'yyyy-MM-dd')
+                  const isCurrentMonth = getDay(day) >= 0 && day >= startOfMonth(currentMonth) && day <= endOfMonth(currentMonth)
+                  const dayShifts = filteredShifts.filter(s => s.date === dayStr)
+
+                  return (
+                    <div 
+                      key={idx} 
+                      className={cn(
+                        "bg-background p-2 group transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden relative",
+                        !isCurrentMonth && "opacity-30 bg-muted/20",
+                        activeAllocationEmployeeId && isCurrentMonth && "ring-2 ring-dashed ring-primary/40 bg-accent/10"
+                      )}
+                      onDragOver={(e) => {
+                        if (isCurrentMonth) {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'copy';
+                        }
+                      }}
+                      onDrop={(e) => {
+                        if (isCurrentMonth) {
+                          e.preventDefault();
+                          const employeeId = e.dataTransfer.getData('employeeId');
+                          if (employeeId) {
+                            handleDropEmployee(employeeId, dayStr);
+                          }
+                        }
+                      }}
+                      onClick={() => {
+                        if (isCurrentMonth) {
+                          if (activeAllocationEmployeeId) {
+                            handleDropEmployee(activeAllocationEmployeeId, dayStr);
+                            setActiveAllocationEmployeeId(null);
+                          } else {
+                            setNewShiftDate(dayStr)
+                            setIsShiftDialogOpen(true)
+                          }
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={cn(
+                          "text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full",
+                          isSameDay(day, new Date()) ? "bg-primary text-primary-foreground" : "text-foreground"
+                        )}>
+                          {format(day, 'd')}
+                        </span>
+                      </div>
+                      <div className="space-y-1 overflow-y-auto max-h-[82px] scrollbar-hide">
+                        {dayShifts.map(s => (
+                          <div 
+                            key={s.id} 
+                            onClick={(e) => {
+                              // Prevent click through to the day div which would allocate or open shift dialog
+                              e.stopPropagation();
+                            }}
+                            className="text-[9px] bg-primary/10 border-l-2 border-primary p-1.5 rounded-sm leading-tight flex flex-col relative group/shift"
+                          >
+                            <span className="font-bold truncate text-primary pr-3.5">{s.userName}</span>
+                            <span className="text-muted-foreground">{s.startTime} - {s.endTime}</span>
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteShift(s.id);
+                              }}
+                              className="absolute top-1 right-1 opacity-0 group-hover/shift:opacity-100 bg-destructive/90 hover:bg-destructive text-white rounded-full w-3.5 h-3.5 flex items-center justify-center transition-all text-[8px] font-bold"
+                              title="Remover turno"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="lista">
