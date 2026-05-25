@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#4A6C5D</color> <!-- Rollsin Primary Green -->
+    <color name="colorPrimaryDark">#2D855A</color>
+    <color name="colorAccent">#84DB84</color>
+    <color name="off_white">#FAF9F6</color>
+</resources>
