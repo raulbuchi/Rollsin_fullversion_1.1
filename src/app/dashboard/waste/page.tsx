@@ -20,6 +20,7 @@ import {
   CameraOff,
   TrendingUp
 } from 'lucide-react';
+import { useAuth } from '@/lib/store';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -44,10 +45,11 @@ interface WasteRecord {
 }
 
 export default function FoodWastePage() {
+  const { user: localUser } = useAuth();
   const db = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const restaurantId = 'gp-001';
+  const restaurantId = localUser?.restaurantId || 'gp-001';
 
   const [activeTab, setActiveTab] = useState<WasteType>('Vencido/Estragado');
   const [description, setDescription] = useState('');

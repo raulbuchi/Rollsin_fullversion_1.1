@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,10 +18,14 @@ import {
   ShieldCheck,
   Lock,
   KeyRound,
-  UserCheck
+  UserCheck,
+  BrainCircuit,
+  Eye,
+  EyeOff,
+  ExternalLink
 } from 'lucide-react'
-import { useFirestore, useCollection, useMemoFirebase, useAuth as useFirebaseAuth } from '@/firebase'
-import { collection, query, where, doc } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase, useAuth as useFirebaseAuth, useDoc } from '@/firebase'
+import { collection, query, where, doc, setDoc } from 'firebase/firestore'
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
 import { updatePassword } from 'firebase/auth'
 import {
@@ -44,13 +48,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { UserRole } from '@/lib/store'
+import { useAuth, UserRole } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 
 export default function SettingsPage() {
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const auth = useFirebaseAuth()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
   const { toast } = useToast()
 
   // Consultas estáveis
@@ -93,6 +98,34 @@ export default function SettingsPage() {
   const [newPass, setNewPass] = useState('')
   const [confirmPass, setConfirmPass] = useState('')
   const [isChangingPass, setIsChangingPass] = useState(false)
+
+  // Estados de IA (BYOK)
+  const aiConfigRef = useMemo(() => doc(db, 'restaurants', restaurantId, 'config', 'ai'), [db, restaurantId])
+  const { data: aiConfig } = useDoc(aiConfigRef)
+  const [geminiKey, setGeminiKey] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [isSavingKey, setIsSavingKey] = useState(false)
+
+  // Sincronizar estado local com o banco quando carregar
+  useEffect(() => {
+    if (aiConfig?.geminiApiKey) setGeminiKey(aiConfig.geminiApiKey)
+  }, [aiConfig])
+
+  const handleSaveAIKey = async () => {
+    if (!db) return
+    setIsSavingKey(true)
+    try {
+      await setDoc(aiConfigRef, {
+        geminiApiKey: geminiKey,
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+      toast({ title: "Configuração Salva", description: "Sua chave do Gemini foi atualizada." })
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro ao salvar", description: "Não foi possível salvar a chave de IA." })
+    } finally {
+      setIsSavingKey(false)
+    }
+  }
 
   const handleAddTable = () => {
     if (!newTableName || !db) return
@@ -209,6 +242,61 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Configuração de IA (BYOK) */}
+        <Card className="flex flex-col shadow-md border-secondary/20 bg-secondary/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="w-5 h-5 text-secondary" />
+              <CardTitle className="text-lg">Inteligência Artificial</CardTitle>
+            </div>
+            <CardDescription>Configure sua própria chave do Google Gemini para habilitar funções inteligentes.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label>Google Gemini API Key</Label>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-primary flex items-center gap-1 hover:underline font-bold"
+                >
+                  Obter chave gratuita <ExternalLink className="w-2 h-2" />
+                </a>
+              </div>
+              <div className="relative">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  placeholder="Cole sua chave aqui..."
+                  className="bg-background pr-10"
+                />
+                <button
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowKey(!showKey)}
+                >
+                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight italic">
+                A IA é usada para ler Notas Fiscais automaticamente e sugerir preços estratégicos nas fichas técnicas.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              variant="secondary"
+              className="w-full font-bold gap-2"
+              onClick={handleSaveAIKey}
+              disabled={isSavingKey}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {isSavingKey ? "Salvando..." : "Salvar Chave de IA"}
+            </Button>
+          </CardFooter>
+        </Card>
+
         {/* Segurança do Usuário */}
         <Card className="flex flex-col shadow-md border-primary/20 bg-primary/5">
           <CardHeader>

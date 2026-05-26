@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, Sparkles, CheckCircle2, Circle } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, CheckCircle2, Circle } from 'lucide-react'
+import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc } from 'firebase/firestore'
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
@@ -154,6 +155,7 @@ const SupplierManager = ({
 
 export default function InventoryPage() {
   const { t, i18n } = useTranslation()
+  const { user: localUser } = useAuth()
   const [mounted, setMounted] = useState(false)
   
   useEffect(() => {
@@ -163,7 +165,7 @@ export default function InventoryPage() {
   const db = useFirestore()
   const { user } = useUser()
   const { toast } = useToast()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
   
   const [searchTerm, setSearchTerm] = useState('')
   const [shoppingSearchTerm, setShoppingSearchTerm] = useState('')
@@ -187,17 +189,18 @@ export default function InventoryPage() {
 
   const [newSupplier, setNewSupplier] = useState<Supplier>({ name: '', cost: 0, unit: 'kg' })
 
+  // Queries simplificadas para evitar erros de índice
   const inventoryQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db || !user || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'ingredients'))
-  }, [db, user])
+  }, [db, user, restaurantId])
 
   const { data: inventory, isLoading } = useCollection<InventoryItem>(inventoryQuery)
 
   const shoppingListQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db || !user || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'shoppingListItems'))
-  }, [db, user])
+  }, [db, user, restaurantId])
   const { data: shoppingList, isLoading: isLoadingShopping } = useCollection<ShoppingListItem>(shoppingListQuery)
 
   const getExpirationStatus = (expDateStr?: string) => {
@@ -329,11 +332,11 @@ export default function InventoryPage() {
   }
 
   const filteredInventory = inventory?.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
   const filteredShoppingList = shoppingList?.filter(item => 
-    item.name.toLowerCase().includes(shoppingSearchTerm.toLowerCase())
+    (item.name || '').toLowerCase().includes(shoppingSearchTerm.toLowerCase())
   ).sort((a, b) => Number(a.purchased) - Number(b.purchased)) || []
 
   const groupedShoppingList = CATEGORIES.map(cat => ({
@@ -373,40 +376,6 @@ export default function InventoryPage() {
     const docRef = doc(db, 'restaurants', restaurantId, 'shoppingListItems', id)
     deleteDocumentNonBlocking(docRef)
     toast({ variant: "destructive", title: "Removido", description: "O item foi removido da lista." })
-  }
-
-  const handleGenerateSuggestion = () => {
-    if (!inventory || !db || !shoppingList) return
-
-    let addedCount = 0
-    inventory.forEach(invItem => {
-      const minStock = invItem.minStock || 0
-      if (invItem.quantity <= minStock) {
-        const alreadyInList = shoppingList.some(slItem => slItem.inventoryItemId === invItem.id && !slItem.purchased)
-        
-        if (!alreadyInList) {
-          const quantityNeeded = Math.max(1, minStock - invItem.quantity + (minStock > 0 ? minStock * 0.5 : 1))
-          
-          const colRef = collection(db, 'restaurants', restaurantId, 'shoppingListItems')
-          addDocumentNonBlocking(colRef, {
-            inventoryItemId: invItem.id,
-            name: invItem.name,
-            quantityToBuy: Number(quantityNeeded.toFixed(2)),
-            unit: invItem.unit,
-            purchased: false,
-            restaurantId,
-            category: invItem.category || 'Outros'
-          })
-          addedCount++
-        }
-      }
-    })
-
-    if (addedCount > 0) {
-      toast({ title: "Sugestão Gerada", description: `${addedCount} itens com estoque baixo foram adicionados.` })
-    } else {
-      toast({ title: "Tudo Certo", description: "Nenhum item com estoque baixo encontrado que já não esteja na lista." })
-    }
   }
 
   const handleInventorySelect = (invId: string) => {
@@ -630,11 +599,11 @@ export default function InventoryPage() {
                     </span>
                   </TableCell>
                   <TableCell className="uppercase text-xs font-medium text-muted-foreground">{item.unit}</TableCell>
-                  <TableCell>{i18n.language.startsWith('pt') ? 'R$' : i18n.language.startsWith('en') ? '$' : '€'} {item.cost.toFixed(2)}</TableCell>
+                  <TableCell>{(i18n.language || 'pt').startsWith('pt') ? 'R$' : (i18n.language || 'pt').startsWith('en') ? '$' : '€'} {item.cost.toFixed(2)}</TableCell>
                   <TableCell>
                     {item.expirationDate ? (
                       <span className={`text-xs font-bold px-2 py-1 rounded-md border ${expStatus?.bg} ${expStatus?.color}`}>
-                        {new Date(item.expirationDate + 'T00:00:00').toLocaleDateString(i18n.language)} 
+                        {new Date(item.expirationDate + 'T00:00:00').toLocaleDateString(i18n.language || 'pt-BR')}
                         {expStatus && expStatus.status !== 'ok' && ` (${expStatus.label})`}
                       </span>
                     ) : (
@@ -714,10 +683,6 @@ export default function InventoryPage() {
               />
             </div>
             
-            <Button variant="secondary" className="gap-2" onClick={handleGenerateSuggestion}>
-              <Sparkles className="w-4 h-4" /> {t('shoppingList.smartSuggestion')}
-            </Button>
-
             <Dialog open={isAddShoppingItemDialogOpen} onOpenChange={setIsAddShoppingItemDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">

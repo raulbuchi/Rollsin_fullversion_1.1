@@ -16,8 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Upload, ScanLine, AlertCircle, Plus, Trash2, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { extractReceiptItems } from '../actions'
-import { useFirestore } from '@/firebase'
+import { useFirestore, useDoc } from '@/firebase'
 import { collection, query, getDocs, where, doc } from 'firebase/firestore'
+import { useMemo } from 'react'
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates'
 
 export interface ReceiptScannerProps {
@@ -49,6 +50,9 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
   const { toast } = useToast()
   const db = useFirestore()
 
+  const aiConfigRef = useMemo(() => doc(db, 'restaurants', restaurantId, 'config', 'ai'), [db, restaurantId])
+  const { data: aiConfig } = useDoc(aiConfigRef)
+
   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -71,7 +75,7 @@ export function ReceiptScanner({ restaurantId, onSuccess }: ReceiptScannerProps)
   const processImage = async (base64: string) => {
     setIsScanning(true)
     try {
-      const result = await extractReceiptItems(base64)
+      const result = await extractReceiptItems(base64, aiConfig?.geminiApiKey)
       
       if (result.success && result.data && result.data.items) {
         // Try to match with existing inventory to populate matchedId or just create new items

@@ -25,15 +25,16 @@ export type SuggestMenuItemPricingOutput = z.infer<
 >;
 
 export async function suggestMenuItemPricing(
-  input: SuggestMenuItemPricingInput
+  input: SuggestMenuItemPricingInput,
+  apiKey?: string
 ): Promise<SuggestMenuItemPricingOutput> {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("NEXT_PUBLIC_GEMINI_API_KEY missing");
+    const finalApiKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!finalApiKey) {
+      throw new Error("Chave de API do Gemini não configurada. Vá em Configurações.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(finalApiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Você é um assistente de precificação de menu para um restaurante brasileiro, especializado em maximizar a lucratividade.

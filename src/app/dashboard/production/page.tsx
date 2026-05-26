@@ -51,7 +51,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface ProductionTask {
   id: string
@@ -73,10 +76,12 @@ interface Employee {
 }
 
 export default function ProductionManagementPage() {
+  const { t, i18n } = useTranslation()
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
   const { toast } = useToast()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
 
   // Modal States
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
@@ -93,13 +98,13 @@ export default function ProductionManagementPage() {
 
   // Queries
   const employeesQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !restaurantId) return null
     // Busca todos os usuários vinculados a este restaurante
     return query(collection(db, 'users'), where('restaurantId', '==', restaurantId))
   }, [db, restaurantId])
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !restaurantId) return null
     // Simplificado para apenas um orderBy para evitar necessidade de índices compostos manuais no protótipo
     return query(
       collection(db, 'restaurants', restaurantId, 'productionTasks'),
@@ -114,8 +119,8 @@ export default function ProductionManagementPage() {
     if (!db || !taskName || !assignedUserId || !user) {
       toast({ 
         variant: "destructive", 
-        title: "Erro no formulário", 
-        description: "Preencha o nome da tarefa e selecione um funcionário." 
+        title: t('common.error'),
+        description: t('production.newDialog.none')
       })
       return
     }
@@ -137,7 +142,7 @@ export default function ProductionManagementPage() {
     setDescription('')
     setAssignedUserId('')
     setIsTaskDialogOpen(false)
-    toast({ title: "Tarefa Atribuída", description: `Tarefa enviada para ${emp?.name || 'o funcionário'}.` })
+    toast({ title: t('production.newDialog.success'), description: t('production.newDialog.successDesc', { name: emp?.name || '...' }) })
   }
 
   const handleEditClick = (task: ProductionTask) => {
@@ -161,77 +166,80 @@ export default function ProductionManagementPage() {
 
     setIsEditDialogOpen(false)
     setEditingTask(null)
-    toast({ title: "Tarefa Atualizada", description: "As alterações foram salvas." })
+    toast({ title: t('production.editDialog.success'), description: t('production.editDialog.successDesc') })
   }
 
   const handleDeleteTask = (id: string) => {
     if (!db) return
     deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'productionTasks', id))
-    toast({ variant: "destructive", title: "Tarefa Removida" })
+    toast({ variant: "destructive", title: t('inventory.toasts.removed') })
   }
 
   return (
     <div className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Gestão de Produção</h1>
-          <p className="text-muted-foreground">Atribua tarefas diretas e acompanhe o progresso da sua equipe.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary">{t('production.title')}</h1>
+          <p className="text-muted-foreground">{t('production.description')}</p>
         </div>
         
-        <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="w-4 h-4" /> Delegar Tarefa
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Tarefa de Produção</DialogTitle>
-              <DialogDescription>A tarefa aparecerá no checklist do funcionário escolhido.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Funcionário Responsável</Label>
-                <Select value={assignedUserId} onValueChange={setAssignedUserId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={isEmployeesLoading ? "Carregando equipe..." : "Selecione..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees?.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.name} ({e.role})</SelectItem>
-                    ))}
-                    {employees?.length === 0 && !isEmployeesLoading && (
-                      <SelectItem value="none" disabled>Nenhum funcionário encontrado</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+        <div className="flex gap-2 w-full md:w-auto">
+          <LanguageSwitcher />
+          <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="w-4 h-4" /> {t('production.delegate')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('production.newDialog.title')}</DialogTitle>
+                <DialogDescription>{t('production.newDialog.description')}</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>{t('production.newDialog.responsible')}</Label>
+                  <Select value={assignedUserId} onValueChange={setAssignedUserId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={isEmployeesLoading ? t('production.newDialog.loading') : t('production.newDialog.select')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees?.map(e => (
+                        <SelectItem key={e.id} value={e.id}>{e.name} ({e.role})</SelectItem>
+                      ))}
+                      {employees?.length === 0 && !isEmployeesLoading && (
+                        <SelectItem value="none" disabled>{t('production.newDialog.none')}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t('production.newDialog.taskName')}</Label>
+                  <Input value={taskName} onChange={(e) => setTaskName(e.target.value)} placeholder={t('production.newDialog.placeholderName')} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t('production.newDialog.taskDesc')}</Label>
+                  <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('production.newDialog.placeholderDesc')} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t('production.newDialog.date')}</Label>
+                  <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Nome da Tarefa</Label>
-                <Input value={taskName} onChange={(e) => setTaskName(e.target.value)} placeholder="Ex: Porcionar 20kg de filé" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Descrição / Instruções</Label>
-                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Detalhes específicos..." />
-              </div>
-              <div className="grid gap-2">
-                <Label>Data de Execução</Label>
-                <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreateTask}>Atribuir Tarefa</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>{t('common.cancel')}</Button>
+                <Button onClick={handleCreateTask}>{t('production.delegate')}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card className="shadow-md">
         <CardHeader className="bg-primary/5">
           <div className="flex items-center gap-2">
             <ListTodo className="w-5 h-5 text-primary" />
-            <CardTitle>Painel de Controle de Tarefas</CardTitle>
+            <CardTitle>{t('production.table.title')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -239,11 +247,11 @@ export default function ProductionManagementPage() {
             <table className="w-full text-sm text-left border-collapse">
               <thead>
                 <tr className="border-b bg-muted/20">
-                  <th className="p-4 font-bold">Data</th>
-                  <th className="p-4 font-bold">Funcionário</th>
-                  <th className="p-4 font-bold">Tarefa</th>
-                  <th className="p-4 font-bold text-center">Status</th>
-                  <th className="p-4 font-bold text-right">Ações</th>
+                  <th className="p-4 font-bold">{t('production.table.date')}</th>
+                  <th className="p-4 font-bold">{t('production.table.employee')}</th>
+                  <th className="p-4 font-bold">{t('production.table.task')}</th>
+                  <th className="p-4 font-bold text-center">{t('production.table.status')}</th>
+                  <th className="p-4 font-bold text-right">{t('production.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +260,7 @@ export default function ProductionManagementPage() {
                     <td colSpan={5} className="p-12 text-center text-muted-foreground">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Carregando tarefas...
+                        {t('production.table.loading')}
                       </div>
                     </td>
                   </tr>
@@ -274,7 +282,7 @@ export default function ProductionManagementPage() {
                       </td>
                       <td className="p-4 text-center">
                         <Badge variant={task.completed ? "secondary" : "outline"} className="text-[10px] uppercase font-bold">
-                          {task.completed ? "Concluído" : "Pendente"}
+                          {task.completed ? t('production.table.completed') : t('production.table.pending')}
                         </Badge>
                         {task.completedAt && (
                           <div className="text-[8px] text-muted-foreground mt-1">
@@ -304,18 +312,18 @@ export default function ProductionManagementPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Tarefa?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('production.deleteDialog.title')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir a tarefa "{task.taskName}"? Esta ação não pode ser desfeita.
+                                  {t('production.deleteDialog.description', { name: task.taskName })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                 <AlertDialogAction 
                                   onClick={() => handleDeleteTask(task.id)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Confirmar
+                                  {t('common.confirm')}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -328,7 +336,7 @@ export default function ProductionManagementPage() {
                 {!isTasksLoading && (!allTasks || allTasks.length === 0) && (
                   <tr>
                     <td colSpan={5} className="p-12 text-center text-muted-foreground italic">
-                      Nenhuma tarefa atribuída ainda. Comece delegando uma tarefa no botão acima.
+                      {t('production.table.empty')}
                     </td>
                   </tr>
                 )}
@@ -342,18 +350,18 @@ export default function ProductionManagementPage() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar e Reatribuir Tarefa</DialogTitle>
-            <DialogDescription>Ajuste os detalhes da tarefa ou mova-a para outro funcionário/data.</DialogDescription>
+            <DialogTitle>{t('production.editDialog.title')}</DialogTitle>
+            <DialogDescription>{t('production.editDialog.description')}</DialogDescription>
           </DialogHeader>
           {editingTask && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Funcionário Responsável</Label>
+                <Label>{t('production.newDialog.responsible')}</Label>
                 <Select 
                   value={editingTask.assignedUserId} 
                   onValueChange={(val) => setEditingTask({...editingTask, assignedUserId: val})}
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('production.newDialog.select')} /></SelectTrigger>
                   <SelectContent>
                     {employees?.map(e => (
                       <SelectItem key={e.id} value={e.id}>{e.name} ({e.role})</SelectItem>
@@ -362,21 +370,21 @@ export default function ProductionManagementPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label>Nome da Tarefa</Label>
+                <Label>{t('production.newDialog.taskName')}</Label>
                 <Input 
                   value={editingTask.taskName} 
                   onChange={(e) => setEditingTask({...editingTask, taskName: e.target.value})} 
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Descrição / Instruções</Label>
+                <Label>{t('production.newDialog.taskDesc')}</Label>
                 <Input 
                   value={editingTask.description} 
                   onChange={(e) => setEditingTask({...editingTask, description: e.target.value})} 
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Data de Execução</Label>
+                <Label>{t('production.newDialog.date')}</Label>
                 <Input 
                   type="date" 
                   value={editingTask.date} 
@@ -386,8 +394,8 @@ export default function ProductionManagementPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); setEditingTask(null); }}>Cancelar</Button>
-            <Button onClick={handleUpdateTask}>Salvar Alterações</Button>
+            <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); setEditingTask(null); }}>{t('common.cancel')}</Button>
+            <Button onClick={handleUpdateTask}>{t('production.editDialog.success')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

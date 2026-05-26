@@ -39,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, doc, query, orderBy } from 'firebase/firestore'
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates'
@@ -81,23 +82,24 @@ interface OrderData {
 }
 
 export default function OrdersPage() {
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
 
   // Consultas memorizadas para evitar loops
   const tablesQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null
+    if (!db || !user?.uid || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'tables'), orderBy('tableNumber', 'asc'))
-  }, [db, user?.uid])
+  }, [db, user?.uid, restaurantId])
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null
+    if (!db || !user?.uid || !restaurantId) return null
     return query(
       collection(db, 'restaurants', restaurantId, 'orders'),
       orderBy('orderDateTime', 'asc')
     )
-  }, [db, user?.uid])
+  }, [db, user?.uid, restaurantId])
 
   const { data: tables } = useCollection<TableData>(tablesQuery)
   const { data: allOrders } = useCollection<OrderData>(ordersQuery)

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Trash2, ShoppingBag, Sparkles, CheckCircle2, Circle, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Search, Trash2, ShoppingBag, CheckCircle2, Circle, ChevronDown, ChevronRight } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc } from 'firebase/firestore'
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
@@ -32,6 +32,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/lib/store'
 
 interface InventoryItem {
   id: string
@@ -58,10 +59,11 @@ interface ShoppingListItem {
 const CATEGORIES = ['Hortifruti', 'Carnes', 'Laticínios', 'Mercearia', 'Bebidas', 'Limpeza', 'Embalagens', 'Outros']
 
 export default function ShoppingListPage() {
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
   const { toast } = useToast()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
   
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -120,41 +122,6 @@ export default function ShoppingListPage() {
     toast({ variant: "destructive", title: "Removido", description: "O item foi removido da lista." })
   }
 
-  const handleGenerateSuggestion = () => {
-    if (!inventory || !db || !shoppingList) return
-
-    let addedCount = 0
-    inventory.forEach(invItem => {
-      const minStock = invItem.minStock || 0
-      if (invItem.quantity <= minStock) {
-        // Check if already in shopping list (not purchased)
-        const alreadyInList = shoppingList.some(slItem => slItem.inventoryItemId === invItem.id && !slItem.purchased)
-        
-        if (!alreadyInList) {
-          const quantityNeeded = Math.max(1, minStock - invItem.quantity + (minStock > 0 ? minStock * 0.5 : 1)) // Suggest buying enough to get above minStock + 50% buffer
-          
-          const colRef = collection(db, 'restaurants', restaurantId, 'shoppingListItems')
-          addDocumentNonBlocking(colRef, {
-            inventoryItemId: invItem.id,
-            name: invItem.name,
-            quantityToBuy: Number(quantityNeeded.toFixed(2)),
-            unit: invItem.unit,
-            purchased: false,
-            restaurantId,
-            category: invItem.category || 'Outros'
-          })
-          addedCount++
-        }
-      }
-    })
-
-    if (addedCount > 0) {
-      toast({ title: "Sugestão Gerada", description: `${addedCount} itens com estoque baixo foram adicionados.` })
-    } else {
-      toast({ title: "Tudo Certo", description: "Nenhum item com estoque baixo encontrado que já não esteja na lista." })
-    }
-  }
-
   const handleInventorySelect = (invId: string) => {
     const selected = inventory?.find(i => i.id === invId)
     if (selected) {
@@ -175,7 +142,7 @@ export default function ShoppingListPage() {
   }
 
   const filteredList = shoppingList?.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => Number(a.purchased) - Number(b.purchased)) || []
 
   const groupedShoppingList = CATEGORIES.map(cat => ({
@@ -201,10 +168,6 @@ export default function ShoppingListPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
-          <Button variant="secondary" className="gap-2" onClick={handleGenerateSuggestion}>
-            <Sparkles className="w-4 h-4" /> Sugestão Inteligente
-          </Button>
 
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>

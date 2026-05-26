@@ -52,8 +52,9 @@ import {
 import Image from 'next/image'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection, query } from 'firebase/firestore'
+import { useAuth } from '@/lib/store'
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase'
+import { collection, query, doc } from 'firebase/firestore'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Image as ImageIcon } from 'lucide-react'
 
@@ -178,14 +179,18 @@ const calculateProportionalCost = (recipeQtyStr: string, invUnitStr: string, inv
 
 export default function RecipesPage() {
   const { toast } = useToast()
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
+
+  const aiConfigRef = useMemo(() => doc(db, 'restaurants', restaurantId, 'config', 'ai'), [db, restaurantId])
+  const { data: aiConfig } = useDoc(aiConfigRef)
 
   const inventoryQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db || !user || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'ingredients'))
-  }, [db, user])
+  }, [db, user, restaurantId])
 
   const { data: inventory } = useCollection<InventoryItem>(inventoryQuery)
 
@@ -518,7 +523,7 @@ export default function RecipesPage() {
         simplesNacionalTaxPercentage: tax,
         creditCardFeePercentage: cardFee,
         deliveryAppCommissionPercentage: deliveryFee
-      })
+      }, aiConfig?.geminiApiKey)
       setAiResult(result)
     } catch (error) {
       console.error("AI Analysis failed", error)

@@ -15,22 +15,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { 
-  ClipboardCheck, 
-  UtensilsCrossed, 
-  Sun, 
-  Moon, 
-  Zap, 
-  Flame, 
-  TrendingUp, 
-  PackageSearch,
-  Clock,
-  CalendarCheck,
-  CheckCircle2,
+import { useTranslation } from 'react-i18next'
+import {
   Trash2,
   AlertTriangle,
+  TrendingUp,
+  UtensilsCrossed,
+  Zap,
+  ChefHat,
   ListTodo,
-  ChefHat
+  Clock,
+  CalendarCheck,
+  ClipboardCheck,
+  Sun,
+  Moon
 } from 'lucide-react'
 
 interface WorkShift {
@@ -70,10 +68,11 @@ interface Ingredient {
 }
 
 export default function DashboardPage() {
+  const { t, i18n } = useTranslation()
   const { user: localUser } = useAuth()
   const { user: firebaseUser } = useUser()
   const db = useFirestore()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
 
   const [startTime, setStartTime] = useState('08:00')
   const [endTime, setEndTime] = useState('17:00')
@@ -144,11 +143,11 @@ export default function DashboardPage() {
   }, [rawWaste, todayStr])
 
   const wasteStatus = useMemo(() => {
-    if (totalWasteToday === 0) return { color: 'bg-green-500', label: 'Excelente', message: 'Nenhum desperdício hoje!' }
-    if (totalWasteToday <= 2) return { color: 'bg-green-500', label: 'Normal', message: 'Desperdício sob controle.' }
+    if (totalWasteToday === 0) return { color: 'bg-green-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
+    if (totalWasteToday <= 2) return { color: 'bg-green-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
     if (totalWasteToday <= 5) return { color: 'bg-yellow-500', label: 'Alerta', message: 'Volume de perdas aumentando.' }
-    return { color: 'bg-red-500', label: 'Crítico', message: 'Desperdício excessivo! Revisar processos.' }
-  }, [totalWasteToday])
+    return { color: 'bg-red-500', label: t('inventory.status.critical'), message: 'Desperdício excessivo! Revisar processos.' }
+  }, [totalWasteToday, t])
 
   const expirationAlerts = useMemo(() => {
     if (!rawIngredients) return []
@@ -209,8 +208,8 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline mb-2 text-primary">Rolls-In Dashboard</h1>
-          <p className="text-muted-foreground">Olá, {localUser?.name}. Gerencie sua operação com excelência.</p>
+          <h1 className="text-3xl font-bold font-headline mb-2 text-primary">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground">{t('dashboard.welcome', { name: localUser?.name })}</p>
         </div>
         
         <div className="flex gap-4">
@@ -226,12 +225,12 @@ export default function DashboardPage() {
 
           <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 flex gap-6">
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Hoje</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('dashboard.stats.today') || 'Hoje'}</p>
               <p className="text-xl font-black text-primary">{dailyHours.toFixed(1)}h</p>
             </div>
             <div className="w-px bg-primary/20" />
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Mês ({format(new Date(), 'MMM', { locale: ptBR })})</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('dashboard.stats.month', { month: format(new Date(), 'MMM', { locale: i18n.language === 'pt' ? ptBR : undefined }) }) || `Mês (${format(new Date(), 'MMM', { locale: i18n.language === 'pt' ? ptBR : undefined })})`}</p>
               <p className="text-xl font-black text-primary">{monthlyHours.toFixed(1)}h</p>
             </div>
           </div>
@@ -241,14 +240,14 @@ export default function DashboardPage() {
       {expirationAlerts.length > 0 && (
         <Alert variant="destructive" className="bg-destructive/10 border border-destructive/20 text-destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="font-bold">Atenção! Insumos próximos do vencimento</AlertTitle>
+          <AlertTitle className="font-bold">{t('dashboard.alerts.expiration.title')}</AlertTitle>
           <AlertDescription>
             <ul className="mt-2 text-sm max-h-32 overflow-auto space-y-1">
               {expirationAlerts.map((alert, idx) => (
                 <li key={idx} className="flex justify-between items-center bg-white/50 dark:bg-black/10 px-3 py-1.5 rounded">
                   <span>{alert.name}</span>
                   <Badge variant="outline" className={alert.daysLeft < 0 ? 'text-destructive border-destructive font-black' : 'text-orange-600 border-orange-600 font-bold'}>
-                    {alert.daysLeft < 0 ? `Vencido há ${Math.abs(alert.daysLeft)} dias` : alert.daysLeft === 0 ? 'Vence hoje' : `Vence em ${alert.daysLeft} dias`}
+                    {alert.daysLeft < 0 ? t('dashboard.alerts.expiration.expired', { days: Math.abs(alert.daysLeft) }) : alert.daysLeft === 0 ? t('dashboard.alerts.expiration.today') : t('dashboard.alerts.expiration.inDays', { days: alert.daysLeft })}
                   </Badge>
                 </li>
               ))}
@@ -258,10 +257,10 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Vendas Hoje" value="R$ 4.250,00" icon={<TrendingUp className="text-primary" />} change="+12.5% vs ontem" />
-        <StatCard title="Pedidos" value="42" icon={<UtensilsCrossed className="text-primary" />} change="8 aguardando" />
-        <StatCard title="CMV Médio" value="28.4%" icon={<Zap className="text-primary" />} change="Ideal: <30%" />
-        <StatCard title="Desperdício Hoje" value={`${totalWasteToday.toFixed(1)} kg`} icon={<Trash2 className="text-primary" />} change={wasteStatus.message} />
+        <StatCard title={t('dashboard.stats.sales')} value="R$ 4.250,00" icon={<TrendingUp className="text-primary" />} change={`+12.5% ${t('dashboard.stats.vsYesterday')}`} />
+        <StatCard title={t('dashboard.stats.orders')} value="42" icon={<UtensilsCrossed className="text-primary" />} change={`8 ${t('dashboard.stats.waiting')}`} />
+        <StatCard title={t('dashboard.stats.cmv')} value="28.4%" icon={<Zap className="text-primary" />} change="Ideal: <30%" />
+        <StatCard title={t('dashboard.stats.waste')} value={`${totalWasteToday.toFixed(1)} kg`} icon={<Trash2 className="text-primary" />} change={wasteStatus.message} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -270,9 +269,9 @@ export default function DashboardPage() {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <ChefHat className="text-secondary w-5 h-5" />
-                Produção do Dia
+                {t('dashboard.production.title')}
               </CardTitle>
-              <CardDescription>Suas tarefas diretas para o turno de hoje.</CardDescription>
+              <CardDescription>{t('dashboard.production.description')}</CardDescription>
             </div>
             <Badge variant="secondary" className="font-bold">
               {myTasks?.filter(t => t.completed).length || 0}/{myTasks?.length || 0}
@@ -293,17 +292,17 @@ export default function DashboardPage() {
                   <p className="text-[10px] text-muted-foreground mt-0.5">{task.description}</p>
                   {task.completedAt && (
                     <span className="text-[8px] font-bold text-secondary uppercase mt-2 block">
-                      Concluído às {format(new Date(task.completedAt), 'HH:mm')}
+                      {t('dashboard.production.completedAt', { time: format(new Date(task.completedAt), 'HH:mm') })}
                     </span>
                   )}
                 </div>
-                {!task.completed && <Badge variant="outline" className="text-[8px] animate-pulse">PENDENTE</Badge>}
+                {!task.completed && <Badge variant="outline" className="text-[8px] animate-pulse">{t('checklists.pdf.table.pending')}</Badge>}
               </div>
             ))}
             {myTasks?.length === 0 && (
               <div className="text-center py-10 text-muted-foreground space-y-2">
                 <ListTodo className="w-12 h-12 mx-auto opacity-10" />
-                <p className="text-xs italic">Nenhuma tarefa de produção atribuída para você hoje.</p>
+                <p className="text-xs italic">{t('dashboard.production.empty')}</p>
               </div>
             )}
           </CardContent>
@@ -313,27 +312,27 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Clock className="text-primary w-5 h-5" />
-              <CardTitle className="text-lg">Bater Ponto</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.punchClock.title')}</CardTitle>
             </div>
-            <CardDescription>Registre sua jornada de hoje.</CardDescription>
+            <CardDescription>{t('dashboard.punchClock.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs">Entrada</Label>
+                <Label className="text-xs">{t('dashboard.punchClock.in')}</Label>
                 <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="bg-background" />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Saída</Label>
+                <Label className="text-xs">{t('dashboard.punchClock.out')}</Label>
                 <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-background" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs">Intervalo (minutos)</Label>
+              <Label className="text-xs">{t('dashboard.punchClock.break')}</Label>
               <Input type="number" value={breakMin} onChange={(e) => setBreakMin(e.target.value)} className="bg-background" />
             </div>
             <Button onClick={handleRegisterShift} disabled={isSubmitting} className="w-full font-bold gap-2">
-              {isSubmitting ? "Registrando..." : <><CalendarCheck className="w-4 h-4" /> Registrar Turno</>}
+              {isSubmitting ? t('dashboard.punchClock.registering') : <><CalendarCheck className="w-4 h-4" /> {t('dashboard.punchClock.register')}</>}
             </Button>
           </CardContent>
         </Card>
@@ -342,12 +341,12 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <ClipboardCheck className="text-primary w-5 h-5" />
-              <CardTitle className="text-lg">Checklists Fixos</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.fixedChecklists.title')}</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <ChecklistGroup title="Abertura" icon={<Sun className="w-4 h-4 text-orange-500" />} tasks={["AC e Som", "Mesas", "Caixa"]} />
-            <ChecklistGroup title="Encerramento" icon={<Moon className="w-4 h-4 text-indigo-500" />} tasks={["Fch Caixa", "Limpeza", "Lixo"]} />
+            <ChecklistGroup title={t('dashboard.fixedChecklists.groups.opening')} icon={<Sun className="w-4 h-4 text-orange-500" />} tasks={[t('dashboard.fixedChecklists.tasks.ac'), t('dashboard.fixedChecklists.tasks.tables'), t('dashboard.fixedChecklists.tasks.cashier')]} />
+            <ChecklistGroup title={t('dashboard.fixedChecklists.groups.closing')} icon={<Moon className="w-4 h-4 text-indigo-500" />} tasks={[t('dashboard.fixedChecklists.tasks.closingCashier'), t('dashboard.fixedChecklists.tasks.cleaning'), t('dashboard.fixedChecklists.tasks.trash')]} />
           </CardContent>
         </Card>
       </div>

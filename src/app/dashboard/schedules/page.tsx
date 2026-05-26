@@ -14,8 +14,10 @@ import {
   Plus, 
   Clock, 
   User, 
-  Trash2, 
+  Users,
+  Trash2,
   ChevronLeft, 
+  Search,
   ChevronRight,
   TrendingUp,
   History,
@@ -66,6 +68,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from '@/lib/store'
+import { useToast } from '@/hooks/use-toast'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { cn } from '@/lib/utils'
@@ -108,14 +112,18 @@ const getEmployeeColor = (id: string) => {
 }
 
 export default function SchedulesPage() {
+  const { toast } = useToast()
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all')
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false)
   const [activeAllocationEmployeeId, setActiveAllocationEmployeeId] = useState<string | null>(null)
+  const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null)
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('')
 
   // Form State
   const [newShiftUserId, setNewShiftUserId] = useState('')
@@ -126,14 +134,14 @@ export default function SchedulesPage() {
 
   // Queries simplificadas para evitar erros de índice composto no Firebase
   const shiftsQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null
+    if (!db || !user?.uid || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'workShifts'))
-  }, [db, user?.uid])
+  }, [db, user?.uid, restaurantId])
 
   const employeesQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null
+    if (!db || !user?.uid || !restaurantId) return null
     return query(collection(db, 'users'), where('restaurantId', '==', restaurantId))
-  }, [db, user?.uid])
+  }, [db, user?.uid, restaurantId])
 
   const { data: shifts } = useCollection<WorkShift>(shiftsQuery)
   const { data: employees } = useCollection<Employee>(employeesQuery)
@@ -436,55 +444,75 @@ export default function SchedulesPage() {
               </div>
 
               {/* Employee Draggable Badges */}
-              <div className="space-y-2 max-h-[300px] lg:max-h-none overflow-y-auto pr-1">
-                <span className="font-semibold text-[10px] uppercase text-muted-foreground block tracking-wider mb-1">
-                  Colaboradores:
-                </span>
-                {employees?.map((emp) => {
-                  const initials = emp.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-                  const isSelected = activeAllocationEmployeeId === emp.id;
-                  const themeClasses = getEmployeeColor(emp.id);
+              <div className="space-y-2 flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-semibold text-[10px] uppercase text-muted-foreground block tracking-wider">
+                    Colaboradores:
+                  </span>
+                  <Badge variant="outline" className="text-[9px]">{employees?.length || 0}</Badge>
+                </div>
 
-                  return (
-                    <div
-                      key={emp.id}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('employeeId', emp.id);
-                        e.dataTransfer.effectAllowed = 'copy';
-                      }}
-                      onClick={() => {
-                        if (isSelected) {
-                          setActiveAllocationEmployeeId(null);
-                        } else {
-                          setActiveAllocationEmployeeId(emp.id);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing hover:shadow-sm select-none",
-                        isSelected 
-                          ? "border-primary bg-primary/10 shadow hover:bg-primary/10 scale-[1.02] ring-1 ring-primary" 
-                          : "border-border bg-background hover:bg-muted/10"
-                      )}
-                    >
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 border", themeClasses)}>
-                        {initials}
+                <div className="relative mb-2">
+                  <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar funcionário..."
+                    className="pl-7 h-7 text-[10px]"
+                    value={employeeSearchTerm}
+                    onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[400px] lg:max-h-none custom-scrollbar">
+                  {employees?.filter(e => e.name.toLowerCase().includes(employeeSearchTerm.toLowerCase())).map((emp) => {
+                    const initials = emp.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                    const isSelected = activeAllocationEmployeeId === emp.id;
+                    const themeClasses = getEmployeeColor(emp.id);
+
+                    return (
+                      <div
+                        key={emp.id}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('employeeId', emp.id);
+                          e.dataTransfer.effectAllowed = 'copy';
+                        }}
+                        onClick={() => {
+                          if (isSelected) {
+                            setActiveAllocationEmployeeId(null);
+                          } else {
+                            setActiveAllocationEmployeeId(emp.id);
+                            toast({
+                              title: "Modo de Alocação Ativo",
+                              description: `Agora clique em uma data no calendário para escalar ${emp.name}.`,
+                            });
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-xl border-2 transition-all cursor-grab active:cursor-grabbing hover:shadow-md select-none",
+                          isSelected
+                            ? "border-primary bg-primary/10 shadow-lg scale-[1.02] ring-2 ring-primary/20"
+                            : "border-border bg-background hover:border-primary/40 hover:bg-muted/5"
+                        )}
+                      >
+                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 border", themeClasses)}>
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-xs truncate text-foreground">{emp.name}</p>
+                          <p className="text-[9px] text-muted-foreground truncate font-medium">{emp.role}</p>
+                        </div>
+                        <div className="flex flex-col gap-0.5 opacity-40 hover:opacity-80 shrink-0 px-1">
+                          <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                          <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                          <span className="w-1 h-0.5 bg-foreground rounded-full" />
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-xs truncate text-foreground">{emp.name}</p>
-                        <p className="text-[9px] text-muted-foreground truncate font-medium">{emp.role}</p>
-                      </div>
-                      <div className="flex flex-col gap-0.5 opacity-40 hover:opacity-80 shrink-0 px-1">
-                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
-                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
-                        <span className="w-1 h-0.5 bg-foreground rounded-full" />
-                      </div>
-                    </div>
-                  );
-                })}
-                {employees?.length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground py-4">Nenhum funcionário cadastrado.</p>
-                )}
+                    )
+                  })}
+                  {employees?.length === 0 && (
+                    <p className="text-center text-xs text-muted-foreground py-4">Nenhum funcionário cadastrado.</p>
+                  )}
+                </div>
               </div>
             </Card>
 
@@ -507,9 +535,10 @@ export default function SchedulesPage() {
                     <div 
                       key={idx} 
                       className={cn(
-                        "bg-background p-2 group transition-colors hover:bg-muted/30 cursor-pointer overflow-hidden relative",
+                        "bg-background p-2 group transition-all hover:bg-muted/30 cursor-pointer overflow-hidden relative border-r border-b",
                         !isCurrentMonth && "opacity-30 bg-muted/20",
-                        activeAllocationEmployeeId && isCurrentMonth && "ring-2 ring-dashed ring-primary/40 bg-accent/10"
+                        activeAllocationEmployeeId && isCurrentMonth && "ring-2 ring-dashed ring-primary/40 bg-accent/10",
+                        draggedOverDate === dayStr && "bg-primary/20 ring-2 ring-inset ring-primary z-10"
                       )}
                       onDragOver={(e) => {
                         if (isCurrentMonth) {
@@ -517,7 +546,14 @@ export default function SchedulesPage() {
                           e.dataTransfer.dropEffect = 'copy';
                         }
                       }}
+                      onDragEnter={() => {
+                        if (isCurrentMonth) setDraggedOverDate(dayStr);
+                      }}
+                      onDragLeave={() => {
+                        setDraggedOverDate(null);
+                      }}
                       onDrop={(e) => {
+                        setDraggedOverDate(null);
                         if (isCurrentMonth) {
                           e.preventDefault();
                           const employeeId = e.dataTransfer.getData('employeeId');
@@ -545,32 +581,47 @@ export default function SchedulesPage() {
                         )}>
                           {format(day, 'd')}
                         </span>
+                        {dayShifts.length > 5 && (
+                          <Badge className="bg-primary/20 text-primary border-none text-[8px] h-4">
+                            {dayShifts.length} alocações
+                          </Badge>
+                        )}
                       </div>
                       <div className="space-y-1 overflow-y-auto max-h-[82px] scrollbar-hide">
-                        {dayShifts.map(s => (
-                          <div 
-                            key={s.id} 
-                            onClick={(e) => {
-                              // Prevent click through to the day div which would allocate or open shift dialog
-                              e.stopPropagation();
-                            }}
-                            className="text-[9px] bg-primary/10 border-l-2 border-primary p-1.5 rounded-sm leading-tight flex flex-col relative group/shift"
-                          >
-                            <span className="font-bold truncate text-primary pr-3.5">{s.userName}</span>
-                            <span className="text-muted-foreground">{s.startTime} - {s.endTime}</span>
-                            <button 
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteShift(s.id);
-                              }}
-                              className="absolute top-1 right-1 opacity-0 group-hover/shift:opacity-100 bg-destructive/90 hover:bg-destructive text-white rounded-full w-3.5 h-3.5 flex items-center justify-center transition-all text-[8px] font-bold"
-                              title="Remover turno"
-                            >
-                              ×
-                            </button>
+                        {dayShifts.length > 8 ? (
+                          <div className="flex flex-col items-center justify-center h-[70px] text-center p-1 bg-primary/5 rounded-lg border border-dashed border-primary/20">
+                            <Users className="w-5 h-5 text-primary/40 mb-1" />
+                            <p className="text-[9px] font-black text-primary leading-tight">
+                              {dayShifts.length} FUNCIONÁRIOS
+                            </p>
+                            <p className="text-[7px] text-muted-foreground uppercase">Clique para ver lista</p>
                           </div>
-                        ))}
+                        ) : (
+                          dayShifts.map(s => (
+                            <div
+                              key={s.id}
+                              onClick={(e) => {
+                                // Prevent click through to the day div which would allocate or open shift dialog
+                                e.stopPropagation();
+                              }}
+                              className="text-[9px] bg-primary/10 border-l-2 border-primary p-1.5 rounded-sm leading-tight flex flex-col relative group/shift"
+                            >
+                              <span className="font-bold truncate text-primary pr-3.5">{s.userName}</span>
+                              <span className="text-muted-foreground">{s.startTime} - {s.endTime}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteShift(s.id);
+                                }}
+                                className="absolute top-1 right-1 opacity-0 group-hover/shift:opacity-100 bg-destructive/90 hover:bg-destructive text-white rounded-full w-3.5 h-3.5 flex items-center justify-center transition-all text-[8px] font-bold"
+                                title="Remover turno"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   )

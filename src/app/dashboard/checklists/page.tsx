@@ -53,7 +53,9 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { motion, AnimatePresence } from 'motion/react'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface ChecklistTask {
   id: string
@@ -73,80 +75,81 @@ interface ChecklistGroup {
   tasks: ChecklistTask[]
 }
 
-const INITIAL_GROUPS: ChecklistGroup[] = [
-  {
-    id: 'abertura',
-    title: 'Abertura do Salão',
-    description: 'Tarefas essenciais antes da chegada do primeiro cliente.',
-    icon: <Sun className="w-5 h-5 text-orange-500" />,
-    tasks: [
-      { id: 'a1', label: 'Ligar ar condicionado e som ambiente', completed: false, scheduledTime: '08:00' },
-      { id: 'a2', label: 'Verificar limpeza das mesas e cadeiras', completed: false, scheduledTime: '08:15' },
-      { id: 'a3', label: 'Conferir cardápios físicos e digitais', completed: false, scheduledTime: '08:30' },
-      { id: 'a4', label: 'Montar estação de bebidas (café, água, gelo)', completed: false, scheduledTime: '08:45' },
-      { id: 'a5', label: 'Verificar banheiros (papel, sabonete, limpeza)', completed: false, scheduledTime: '09:00' },
-      { id: 'a6', label: 'Abrir o caixa com troco conferido', completed: false, scheduledTime: '09:15' },
-    ]
-  },
-  {
-    id: 'cozinha',
-    title: 'Mise en Place (Cozinha)',
-    description: 'Preparo dos ingredientes básicos para o turno.',
-    icon: <Flame className="w-5 h-5 text-red-500" />,
-    tasks: [
-      { id: 'c1', label: 'Higienização de hortifrutis', completed: false, scheduledTime: '09:00' },
-      { id: 'c2', label: 'Porcionamento de proteínas', completed: false, scheduledTime: '09:30' },
-      { id: 'c3', label: 'Preparo de molhos base e caldos', completed: false, scheduledTime: '10:00' },
-      { id: 'c4', label: 'Verificar validade de todos os pré-preparos', completed: false, scheduledTime: '10:30' },
-      { id: 'c5', label: 'Afiação de facas e limpeza de bancadas', completed: false, scheduledTime: '11:00' },
-      { id: 'c6', label: 'Conferir temperatura das geladeiras', completed: false, scheduledTime: '11:15' },
-    ]
-  },
-  {
-    id: 'limpeza-semanal',
-    title: 'Limpeza Semanal',
-    description: 'Manutenção profunda e higienização pesada programada.',
-    icon: <Wind className="w-5 h-5 text-blue-500" />,
-    tasks: [
-      { id: 'l1', label: 'Limpeza profunda e descongelamento de frigoríficos', completed: false, scheduledDate: '2026-04-24' },
-      { id: 'l2', label: 'Lavagem e higienização dos uniformes da equipe', completed: false, scheduledDate: '2026-04-24' },
-      { id: 'l3', label: 'Limpeza dos exaustores e troca de filtros', completed: false, scheduledDate: '2026-04-25' },
-      { id: 'l4', label: 'Higienização das caixas de gordura', completed: false, scheduledDate: '2026-04-25' },
-      { id: 'l5', label: 'Limpeza de vidros, fachadas e luminárias', completed: false, scheduledDate: '2026-04-26' },
-      { id: 'l6', label: 'Organização e varredura do estoque seco', completed: false, scheduledDate: '2026-04-26' },
-    ]
-  },
-  {
-    id: 'terceirizados',
-    title: 'Controle de Terceirizados',
-    description: 'Monitoramento de serviços de manutenção e limpeza externa.',
-    icon: <ShieldCheck className="w-5 h-5 text-secondary" />,
-    tasks: [
-      { id: 't1', label: 'Dedetização e Controle de Pragas (Certificado)', completed: false },
-      { id: 't2', label: 'Limpeza Técnica de Exaustores e Dutos', completed: false },
-      { id: 't3', label: 'Higienização das Caixas de Água', completed: false },
-      { id: 't4', label: 'Manutenção de Ar Condicionado (PMOC)', completed: false },
-      { id: 't5', label: 'Coleta de Resíduos Especiais / Óleo Usado', completed: false },
-      { id: 't6', label: 'Limpeza de Vidros de Altura / Fachada', completed: false },
-      { id: 't7', label: 'Lavagem e Higienização de Uniformes (Serviço Externo)', completed: false },
-    ]
-  },
-  {
-    id: 'fechamento',
-    title: 'Encerramento',
-    description: 'Procedimentos de segurança e limpeza pós-serviço.',
-    icon: <Moon className="w-5 h-5 text-indigo-500" />,
-    tasks: [
-      { id: 'f1', label: 'Fechamento do caixa e sangria', completed: false, scheduledTime: '22:00' },
-      { id: 'f2', label: 'Limpeza de chapas, fornos e fogões', completed: false, scheduledTime: '22:30' },
-      { id: 'f3', label: 'Retirada de lixos e higienização de lixeiras', completed: false, scheduledTime: '23:00' },
-      { id: 'f4', label: 'Verificar se gás e equipamentos estão desligados', completed: false, scheduledTime: '23:15' },
-      { id: 'f5', label: 'Trancar todas as portas e ativar alarme', completed: false, scheduledTime: '23:30' },
-    ]
-  }
-]
-
 export default function ChecklistsPage() {
+  const { t, i18n } = useTranslation()
+  const INITIAL_GROUPS: ChecklistGroup[] = [
+    {
+      id: 'abertura',
+      title: t('checklists.defaultGroups.opening.title'),
+      description: t('checklists.defaultGroups.opening.desc'),
+      icon: <Sun className="w-5 h-5 text-orange-500" />,
+      tasks: [
+        { id: 'a1', label: t('checklists.defaultGroups.opening.tasks.ac'), completed: false, scheduledTime: '08:00' },
+        { id: 'a2', label: t('checklists.defaultGroups.opening.tasks.cleaning'), completed: false, scheduledTime: '08:15' },
+        { id: 'a3', label: t('checklists.defaultGroups.opening.tasks.menus'), completed: false, scheduledTime: '08:30' },
+        { id: 'a4', label: t('checklists.defaultGroups.opening.tasks.beverages'), completed: false, scheduledTime: '08:45' },
+        { id: 'a5', label: t('checklists.defaultGroups.opening.tasks.bathrooms'), completed: false, scheduledTime: '09:00' },
+        { id: 'a6', label: t('checklists.defaultGroups.opening.tasks.cashier'), completed: false, scheduledTime: '09:15' },
+      ]
+    },
+    {
+      id: 'cozinha',
+      title: t('checklists.defaultGroups.kitchen.title'),
+      description: t('checklists.defaultGroups.kitchen.desc'),
+      icon: <Flame className="w-5 h-5 text-red-500" />,
+      tasks: [
+        { id: 'c1', label: t('checklists.defaultGroups.kitchen.tasks.wash'), completed: false, scheduledTime: '09:00' },
+        { id: 'c2', label: t('checklists.defaultGroups.kitchen.tasks.portions'), completed: false, scheduledTime: '09:30' },
+        { id: 'c3', label: t('checklists.defaultGroups.kitchen.tasks.sauces'), completed: false, scheduledTime: '10:00' },
+        { id: 'c4', label: t('checklists.defaultGroups.kitchen.tasks.expiration'), completed: false, scheduledTime: '10:30' },
+        { id: 'c5', label: t('checklists.defaultGroups.kitchen.tasks.knives'), completed: false, scheduledTime: '11:00' },
+        { id: 'c6', label: t('checklists.defaultGroups.kitchen.tasks.fridges'), completed: false, scheduledTime: '11:15' },
+      ]
+    },
+    {
+      id: 'limpeza-semanal',
+      title: t('checklists.defaultGroups.weekly.title'),
+      description: t('checklists.defaultGroups.weekly.desc'),
+      icon: <Wind className="w-5 h-5 text-blue-500" />,
+      tasks: [
+        { id: 'l1', label: t('checklists.defaultGroups.weekly.tasks.fridges'), completed: false, scheduledDate: '2026-04-24' },
+        { id: 'l2', label: t('checklists.defaultGroups.weekly.tasks.uniforms'), completed: false, scheduledDate: '2026-04-24' },
+        { id: 'l3', label: t('checklists.defaultGroups.weekly.tasks.filters'), completed: false, scheduledDate: '2026-04-25' },
+        { id: 'l4', label: t('checklists.defaultGroups.weekly.tasks.grease'), completed: false, scheduledDate: '2026-04-25' },
+        { id: 'l5', label: t('checklists.defaultGroups.weekly.tasks.windows'), completed: false, scheduledDate: '2026-04-26' },
+        { id: 'l6', label: t('checklists.defaultGroups.weekly.tasks.stock'), completed: false, scheduledDate: '2026-04-26' },
+      ]
+    },
+    {
+      id: 'terceirizados',
+      title: t('checklists.defaultGroups.outsourced.title'),
+      description: t('checklists.defaultGroups.outsourced.desc'),
+      icon: <ShieldCheck className="w-5 h-5 text-secondary" />,
+      tasks: [
+        { id: 't1', label: t('checklists.defaultGroups.outsourced.tasks.pest'), completed: false },
+        { id: 't2', label: t('checklists.defaultGroups.outsourced.tasks.ducts'), completed: false },
+        { id: 't3', label: t('checklists.defaultGroups.outsourced.tasks.water'), completed: false },
+        { id: 't4', label: t('checklists.defaultGroups.outsourced.tasks.ac'), completed: false },
+        { id: 't5', label: t('checklists.defaultGroups.outsourced.tasks.waste'), completed: false },
+        { id: 't6', label: t('checklists.defaultGroups.outsourced.tasks.facade'), completed: false },
+        { id: 't7', label: t('checklists.defaultGroups.outsourced.tasks.uniforms'), completed: false },
+      ]
+    },
+    {
+      id: 'fechamento',
+      title: t('checklists.defaultGroups.closing.title'),
+      description: t('checklists.defaultGroups.closing.desc'),
+      icon: <Moon className="w-5 h-5 text-indigo-500" />,
+      tasks: [
+        { id: 'f1', label: t('checklists.defaultGroups.closing.tasks.cashier'), completed: false, scheduledTime: '22:00' },
+        { id: 'f2', label: t('checklists.defaultGroups.closing.tasks.cleaning'), completed: false, scheduledTime: '22:30' },
+        { id: 'f3', label: t('checklists.defaultGroups.closing.tasks.trash'), completed: false, scheduledTime: '23:00' },
+        { id: 'f4', label: t('checklists.defaultGroups.closing.tasks.gas'), completed: false, scheduledTime: '23:15' },
+        { id: 'f5', label: t('checklists.defaultGroups.closing.tasks.alarm'), completed: false, scheduledTime: '23:30' },
+      ]
+    }
+  ]
+
   const [groups, setGroups] = useState<ChecklistGroup[]>(INITIAL_GROUPS)
   const [activeTab, setActiveTab] = useState<string>(INITIAL_GROUPS[0].id)
   
@@ -273,25 +276,25 @@ export default function ChecklistsPage() {
     if (!activeGroup) return
 
     const doc = new jsPDF()
-    const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: i18n.language === 'pt' ? ptBR : undefined })
     const progress = calculateProgress(activeGroup.tasks)
 
     // Header
     doc.setFontSize(20)
     doc.setTextColor(45, 133, 90) // Primary Color (Azul Profissional do Rolls-In ajustado)
-    doc.text('ROLLS-IN | RELATÓRIO DE CONFORMIDADE', 14, 22)
+    doc.text(t('checklists.pdf.title'), 14, 22)
     
     doc.setFontSize(12)
     doc.setTextColor(100)
-    doc.text(`Checklist: ${activeGroup.title}`, 14, 32)
-    doc.text(`Data: ${today}`, 14, 38)
-    doc.text(`Taxa de Conformidade: ${progress}%`, 14, 44)
+    doc.text(t('checklists.pdf.checklist', { title: activeGroup.title }), 14, 32)
+    doc.text(t('checklists.pdf.date', { date: today }), 14, 38)
+    doc.text(t('checklists.pdf.compliance', { progress }), 14, 44)
 
     const tableData = activeGroup.tasks.map(task => {
       const executeDateDisplay = task.completedDate ? format(new Date(`${task.completedDate}T12:00:00`), 'dd/MM/yyyy') : '';
       return [
         task.label,
-        task.completed ? 'CONCLUÍDO' : 'PENDENTE',
+        task.completed ? t('checklists.pdf.table.completed') : t('checklists.pdf.table.pending'),
         [
           task.scheduledDate ? format(new Date(`${task.scheduledDate}T12:00:00`), 'dd/MM/yyyy') : '',
           task.scheduledTime || ''
@@ -305,7 +308,7 @@ export default function ChecklistsPage() {
 
     autoTable(doc, {
       startY: 55,
-      head: [['Tarefa', 'Status', 'Previsto', 'Executado']],
+      head: [[t('checklists.pdf.table.task'), t('checklists.pdf.table.status'), t('checklists.pdf.table.scheduled'), t('checklists.pdf.table.executed')]],
       body: tableData,
       headStyles: { fillColor: [45, 133, 90] },
       alternateRowStyles: { fillColor: [240, 240, 240] },
@@ -316,7 +319,7 @@ export default function ChecklistsPage() {
     const finalY = (doc as any).lastAutoTable.finalY + 20
     doc.setFontSize(10)
     doc.text('________________________________________________', 14, finalY)
-    doc.text('Assinatura do Responsável pelo Turno', 14, finalY + 5)
+    doc.text(t('checklists.pdf.signature'), 14, finalY + 5)
     
     doc.save(`checklist-${activeGroup.title.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
   }
@@ -325,48 +328,49 @@ export default function ChecklistsPage() {
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Checklists de Operação</h1>
-          <p className="text-muted-foreground">Garanta a excelência e consistência nos processos do seu restaurante.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary">{t('checklists.title')}</h1>
+          <p className="text-muted-foreground">{t('checklists.description')}</p>
         </div>
         
         <div className="flex gap-2 w-full md:w-auto">
           <Button variant="outline" onClick={handleExportPDF} className="gap-2">
-            <FileDown className="w-4 h-4" /> Relatório PDF
+            <FileDown className="w-4 h-4" /> {t('checklists.pdfReport')}
           </Button>
+          <LanguageSwitcher />
           <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 flex-1 md:flex-none">
-                <ListPlus className="w-4 h-4" /> Criar Checklist
+                <ListPlus className="w-4 h-4" /> {t('checklists.create')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Novo Checklist Operacional</DialogTitle>
-                <DialogDescription>Crie uma nova categoria de tarefas para sua equipe.</DialogDescription>
+                <DialogTitle>{t('checklists.newDialog.title')}</DialogTitle>
+                <DialogDescription>{t('checklists.newDialog.description')}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="group-title">Título do Checklist</Label>
+                  <Label htmlFor="group-title">{t('checklists.newDialog.fieldTitle')}</Label>
                   <Input 
                     id="group-title" 
-                    placeholder="Ex: Limpeza Semanal" 
+                    placeholder={t('checklists.newDialog.placeholderTitle')}
                     value={newGroupTitle}
                     onChange={(e) => setNewGroupTitle(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="group-desc">Descrição / Objetivo</Label>
+                  <Label htmlFor="group-desc">{t('checklists.newDialog.fieldDesc')}</Label>
                   <Textarea 
                     id="group-desc" 
-                    placeholder="Descreva a finalidade deste processo..." 
+                    placeholder={t('checklists.newDialog.placeholderDesc')}
                     value={newGroupDesc}
                     onChange={(e) => setNewGroupDesc(e.target.value)}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsGroupDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleAddGroup}>Criar Checklist</Button>
+                <Button variant="outline" onClick={() => setIsGroupDialogOpen(false)}>{t('common.cancel')}</Button>
+                <Button onClick={handleAddGroup}>{t('checklists.create')}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -384,7 +388,7 @@ export default function ChecklistsPage() {
                   <h3 className="font-bold text-[10px] uppercase truncate">{group.title}</h3>
                 </div>
                 <div className="flex justify-between items-end mb-1">
-                  <span className="text-[10px] text-muted-foreground">{progress}% concluído</span>
+                  <span className="text-[10px] text-muted-foreground">{t('checklists.progress', { percent: progress })}</span>
                   <span className="text-[10px] font-bold">{group.tasks.filter(t => t.completed).length}/{group.tasks.length}</span>
                 </div>
                 <Progress value={progress} className="h-1.5" />
@@ -423,27 +427,27 @@ export default function ChecklistsPage() {
                   }}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-2 whitespace-nowrap">
-                        <Plus className="w-4 h-4" /> Adicionar Tópico
+                        <Plus className="w-4 h-4" /> {t('inventory.newIngredient')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Adicionar Tópico ao Checklist</DialogTitle>
-                        <DialogDescription>Insira uma nova tarefa para ser executada neste checklist.</DialogDescription>
+                        <DialogTitle>{t('checklists.taskDialog.title')}</DialogTitle>
+                        <DialogDescription>{t('checklists.taskDialog.description')}</DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                          <Label htmlFor="task-label">Nome da Tarefa / Tópico</Label>
+                          <Label htmlFor="task-label">{t('checklists.taskDialog.fieldLabel')}</Label>
                           <Input 
                             id="task-label" 
-                            placeholder="Ex: Conferir estoque de frigoríficos" 
+                            placeholder={t('checklists.taskDialog.placeholderLabel')}
                             value={newTaskLabel}
                             onChange={(e) => setNewTaskLabel(e.target.value)}
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label htmlFor="task-date">Data Prevista (Opcional)</Label>
+                            <Label htmlFor="task-date">{t('checklists.taskDialog.fieldDate')}</Label>
                             <Input 
                               id="task-date" 
                               type="date"
@@ -452,7 +456,7 @@ export default function ChecklistsPage() {
                             />
                           </div>
                           <div className="grid gap-2">
-                            <Label htmlFor="task-time">Hora Prevista (Opcional)</Label>
+                            <Label htmlFor="task-time">{t('checklists.taskDialog.fieldTime')}</Label>
                             <Input 
                               id="task-time" 
                               type="time"
@@ -463,8 +467,8 @@ export default function ChecklistsPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleAddTask}>Adicionar Item</Button>
+                        <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>{t('common.cancel')}</Button>
+                        <Button onClick={handleAddTask}>{t('common.save')}</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -477,15 +481,15 @@ export default function ChecklistsPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir Checklist?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('checklists.deleteDialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação excluirá permanentemente o checklist "{group.title}" e todos os seus tópicos.
+                          {t('checklists.deleteDialog.description', { title: group.title })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDeleteGroup(group.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Confirmar Exclusão
+                          {t('inventory.dialogs.delete.confirm')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -526,14 +530,12 @@ export default function ChecklistsPage() {
                                 exit={{ opacity: 0, height: 0 }}
                                 className="flex flex-wrap items-center gap-3 text-[10px] overflow-hidden mt-1"
                               >
-                                {task.scheduledDate && (
+                                {(task.scheduledDate || task.scheduledTime) && (
                                   <span className="text-muted-foreground flex items-center gap-1 bg-muted/30 px-1.5 py-0.5 rounded">
-                                    <Calendar className="w-3 h-3" /> Data: {format(new Date(`${task.scheduledDate}T12:00:00`), 'dd/MM/yyyy')}
-                                  </span>
-                                )}
-                                {task.scheduledTime && (
-                                  <span className="text-muted-foreground flex items-center gap-1 bg-muted/30 px-1.5 py-0.5 rounded">
-                                    <Clock className="w-3 h-3" /> Hora: {task.scheduledTime}
+                                    <Clock className="w-3 h-3" /> {t('checklists.scheduled', {
+                                      date: task.scheduledDate ? format(new Date(`${task.scheduledDate}T12:00:00`), 'dd/MM/yyyy') : '-',
+                                      time: task.scheduledTime || '-'
+                                    })}
                                   </span>
                                 )}
                                 
@@ -545,7 +547,7 @@ export default function ChecklistsPage() {
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <CheckCircle2 className="w-3 h-3 text-secondary shrink-0" />
-                                    <span className="text-[10px] font-bold text-secondary mr-2">Execução real:</span>
+                                    <span className="text-[10px] font-bold text-secondary mr-2">{t('checklists.realExecution')}</span>
                                     <Input 
                                       type="date"
                                       className="h-6 text-[10px] w-auto py-0 px-2 bg-background border-secondary/30"
@@ -566,7 +568,9 @@ export default function ChecklistsPage() {
                                       animate={{ opacity: 1, x: 0 }}
                                       className="text-secondary font-bold flex items-center gap-1 bg-secondary/10 px-1.5 py-0.5 rounded mt-1"
                                     >
-                                      <CheckCircle2 className="w-3 h-3" /> Executado: {task.completedDate ? `${format(new Date(`${task.completedDate}T12:00:00`), 'dd/MM/yyyy')} ` : ''}{task.completedTime}
+                                      <CheckCircle2 className="w-3 h-3" /> {t('checklists.executed', {
+                                        at: `${task.completedDate ? `${format(new Date(`${task.completedDate}T12:00:00`), 'dd/MM/yyyy')} ` : ''}${task.completedTime}`
+                                      })}
                                     </motion.span>
                                   )
                                 )}
@@ -611,13 +615,13 @@ export default function ChecklistsPage() {
                             </AlertDialogTrigger>
                             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Tópico?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('checklists.deleteTaskDialog.title')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir a tarefa "{task.label}" deste checklist?
+                                  {t('checklists.deleteTaskDialog.description', { label: task.label })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                 <AlertDialogAction 
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -625,7 +629,7 @@ export default function ChecklistsPage() {
                                   }}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Confirmar
+                                  {t('common.confirm')}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -637,11 +641,11 @@ export default function ChecklistsPage() {
                   {group.tasks.length === 0 && (
                     <div className="text-center py-12 border-2 border-dashed rounded-xl">
                       <ClipboardCheck className="w-12 h-12 mx-auto text-muted-foreground opacity-20 mb-2" />
-                      <p className="text-muted-foreground text-sm">Este checklist ainda não possui tópicos.</p>
+                      <p className="text-muted-foreground text-sm">{t('checklists.empty')}</p>
                       <Button variant="link" onClick={() => {
                         setActiveGroupId(group.id)
                         setIsTaskDialogOpen(true)
-                      }}>Adicionar primeiro tópico agora</Button>
+                      }}>{t('checklists.addFirst')}</Button>
                     </div>
                   )}
                 </div>

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, Pencil, Trash2, Drill, Utensils, CalendarDays, DollarSign } from 'lucide-react'
+import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc, orderBy } from 'firebase/firestore'
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
@@ -48,10 +49,11 @@ interface MaterialItem {
 }
 
 export default function MaterialsPage() {
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
   const { toast } = useToast()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
   
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -69,9 +71,9 @@ export default function MaterialsPage() {
   const [editingItem, setEditingItem] = useState<MaterialItem | null>(null)
 
   const materialsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db || !user || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'materials'), orderBy('name', 'asc'))
-  }, [db, user])
+  }, [db, user, restaurantId])
 
   const { data: materials, isLoading } = useCollection<MaterialItem>(materialsQuery)
 

@@ -169,6 +169,296 @@
       "added": "Item adicionado à lista de compras."
     }
   },
+  "dashboard": {
+    "title": "Rolls-In Dashboard",
+    "welcome": "Olá, {{name}}. Gerencie sua operação com excelência.",
+    "stats": {
+      "sales": "Vendas Hoje",
+      "orders": "Pedidos",
+      "waiting": "aguardando",
+      "cmv": "CMV Médio",
+      "waste": "Desperdício Hoje",
+      "vsYesterday": "vs ontem"
+    },
+    "alerts": {
+      "expiration": {
+        "title": "Atenção! Insumos próximos do vencimento",
+        "expired": "Vencido há {{days}} dias",
+        "today": "Vence hoje",
+        "inDays": "Vence em {{days}} dias"
+      }
+    },
+    "production": {
+      "title": "Produção do Dia",
+      "description": "Suas tarefas diretas para o turno de hoje.",
+      "empty": "Nenhuma tarefa de produção atribuída para você hoje.",
+      "completedAt": "Concluído às {{time}}"
+    },
+    "punchClock": {
+      "title": "Bater Ponto",
+      "description": "Registre sua jornada de hoje.",
+      "in": "Entrada",
+      "out": "Saída",
+      "break": "Intervalo (minutos)",
+      "register": "Registrar Turno",
+      "registering": "Registrando..."
+    },
+    "fixedChecklists": {
+      "title": "Checklists Fixos",
+      "groups": {
+        "opening": "Abertura",
+        "closing": "Encerramento"
+      },
+      "tasks": {
+        "ac": "AC e Som",
+        "tables": "Mesas",
+        "cashier": "Caixa",
+        "closingCashier": "Fch Caixa",
+        "cleaning": "Limpeza",
+        "trash": "Lixo"
+      }
+    }
+  },
+  "checklists": {
+    "title": "Checklists de Operação",
+    "description": "Garanta a excelência e consistência nos processos do seu restaurante.",
+    "pdfReport": "Relatório PDF",
+    "create": "Criar Checklist",
+    "newDialog": {
+      "title": "Novo Checklist Operacional",
+      "description": "Crie uma nova categoria de tarefas para sua equipe.",
+      "fieldTitle": "Título do Checklist",
+      "fieldDesc": "Descrição / Objetivo",
+      "placeholderTitle": "Ex: Limpeza Semanal",
+      "placeholderDesc": "Descreva a finalidade deste processo..."
+    },
+    "taskDialog": {
+      "title": "Adicionar Tópico ao Checklist",
+      "description": "Insira uma nova tarefa para ser executada neste checklist.",
+      "fieldLabel": "Nome da Tarefa / Tópico",
+      "fieldDate": "Data Prevista (Opcional)",
+      "fieldTime": "Hora Prevista (Opcional)",
+      "placeholderLabel": "Ex: Conferir estoque de frigoríficos"
+    },
+    "deleteDialog": {
+      "title": "Excluir Checklist?",
+      "description": "Esta ação excluirá permanentemente o checklist \"{{title}}\" e todos os seus tópicos."
+    },
+    "deleteTaskDialog": {
+      "title": "Excluir Tópico?",
+      "description": "Tem certeza que deseja excluir a tarefa \"{{label}}\" deste checklist?"
+    },
+    "progress": "{{percent}}% concluído",
+    "realExecution": "Execução real:",
+    "scheduled": "Data: {{date}} Hora: {{time}}",
+    "executed": "Executado: {{at}}",
+    "empty": "Este checklist ainda não possui tópicos.",
+    "addFirst": "Adicionar primeiro tópico agora",
+    "pdf": {
+      "title": "ROLLS-IN | RELATÓRIO DE CONFORMIDADE",
+      "checklist": "Checklist: {{title}}",
+      "date": "Data: {{date}}",
+      "compliance": "Taxa de Conformidade: {{progress}}%",
+      "table": {
+        "task": "Tarefa",
+        "status": "Status",
+        "scheduled": "Previsto",
+        "executed": "Executado",
+        "completed": "CONCLUÍDO",
+        "pending": "PENDENTE"
+      },
+      "signature": "Assinatura do Responsável pelo Turno"
+    },
+    "defaultGroups": {
+      "opening": {
+        "title": "Abertura do Salão",
+        "desc": "Tarefas essenciais antes da chegada do primeiro cliente.",
+        "tasks": {
+          "ac": "Ligar ar condicionado e som ambiente",
+          "cleaning": "Verificar limpeza das mesas e cadeiras",
+          "menus": "Conferir cardápios físicos e digitais",
+          "beverages": "Montar estação de bebidas (café, água, gelo)",
+          "bathrooms": "Verificar banheiros (papel, sabonete, limpeza)",
+          "cashier": "Abrir o caixa com troco conferido"
+        }
+      },
+      "kitchen": {
+        "title": "Mise en Place (Cozinha)",
+        "desc": "Preparo dos ingredientes básicos para o turno.",
+        "tasks": {
+          "wash": "Higienização de hortifrutis",
+          "portions": "Porcionamento de proteínas",
+          "sauces": "Preparo de molhos base e caldos",
+          "expiration": "Verificar validade de todos os pré-preparos",
+          "knives": "Afiação de facas e limpeza de bancadas",
+          "fridges": "Conferir temperatura das geladeiras"
+        }
+      },
+      "weekly": {
+        "title": "Limpeza Semanal",
+        "desc": "Manutenção profunda e higienização pesada programada.",
+        "tasks": {
+          "fridges": "Limpeza profunda e descongelamento de frigoríficos",
+          "uniforms": "Lavagem e higienização dos uniformes da equipe",
+          "filters": "Limpeza dos exaustores e troca de filtros",
+          "grease": "Higienização das caixas de gordura",
+          "windows": "Limpeza de vidros, fachadas e luminárias",
+          "stock": "Organização e varredura do estoque seco"
+        }
+      },
+      "outsourced": {
+        "title": "Controle de Terceirizados",
+        "desc": "Monitoramento de serviços de manutenção e limpeza externa.",
+        "tasks": {
+          "pest": "Dedetização e Controle de Pragas (Certificado)",
+          "ducts": "Limpeza Técnica de Exaustores e Dutos",
+          "water": "Higienização das Caixas de Água",
+          "ac": "Manutenção de Ar Condicionado (PMOC)",
+          "waste": "Coleta de Resíduos Especiais / Óleo Usado",
+          "facade": "Limpeza de Vidros de Altura / Fachada",
+          "uniforms": "Lavagem e Higienização de Uniformes (Serviço Externo)"
+        }
+      },
+      "closing": {
+        "title": "Encerramento",
+        "desc": "Procedimentos de segurança e limpeza pós-serviço.",
+        "tasks": {
+          "cashier": "Fechamento do caixa e sangria",
+          "cleaning": "Limpeza de chapas, fornos e fogões",
+          "trash": "Retirada de lixos e higienização de lixeiras",
+          "gas": "Verificar se gás e equipamentos estão desligados",
+          "alarm": "Trancar todas as portas e ativar alarme"
+        }
+      }
+    }
+  },
+  "production": {
+    "title": "Gestão de Produção",
+    "description": "Atribua tarefas diretas e acompanhe o progresso da sua equipe.",
+    "delegate": "Delegar Tarefa",
+    "newDialog": {
+      "title": "Nova Tarefa de Produção",
+      "description": "A tarefa aparecerá no checklist do funcionário escolhido.",
+      "responsible": "Funcionário Responsável",
+      "taskName": "Nome da Tarefa",
+      "taskDesc": "Descrição / Instruções",
+      "date": "Data de Execução",
+      "loading": "Carregando equipe...",
+      "select": "Selecione...",
+      "none": "Nenhum funcionário encontrado",
+      "placeholderName": "Ex: Porcionar 20kg de filé",
+      "placeholderDesc": "Detalhes específicos...",
+      "success": "Tarefa Atribuída",
+      "successDesc": "Tarefa enviada para {{name}}."
+    },
+    "editDialog": {
+      "title": "Editar e Reatribuir Tarefa",
+      "description": "Ajuste os detalhes da tarefa ou mova-a para outro funcionário/data.",
+      "success": "Tarefa Atualizada",
+      "successDesc": "As alterações foram salvas."
+    },
+    "deleteDialog": {
+      "title": "Excluir Tarefa?",
+      "description": "Tem certeza que deseja excluir a tarefa \"{{name}}\"? Esta ação não pode ser desfeita."
+    },
+    "table": {
+      "title": "Painel de Controle de Tarefas",
+      "date": "Data",
+      "employee": "Funcionário",
+      "task": "Tarefa",
+      "status": "Status",
+      "actions": "Ações",
+      "loading": "Carregando tarefas...",
+      "empty": "Nenhuma tarefa atribuída ainda. Comece delegando uma tarefa no botão acima.",
+      "completed": "Concluído",
+      "pending": "Pendente"
+    }
+  },
+  "reports": {
+    "title": "Inteligência Operacional",
+    "description": "Análise de performance, custos e conformidade.",
+    "print": "Imprimir",
+    "export": "Exportar PDF",
+    "tabs": {
+      "financial": "Financeiro",
+      "productivity": "Produtividade",
+      "hoursBank": "Banco de Horas",
+      "waste": "Food Waste",
+      "cleaning": "Limpeza & Higiene"
+    },
+    "financial": {
+      "revenue": "Faturamento Bruto",
+      "cogs": "CMV Estimado",
+      "margin": "Margem de Contribuição",
+      "weeklyFlow": "Fluxo Semanal de Vendas",
+      "weeklyFlowDesc": "Comparativo entre faturamento e custos diretos.",
+      "expenseDist": "Distribuição de Despesas",
+      "expenseDistDesc": "Onde seu capital está sendo aplicado.",
+      "chartRevenue": "Venda (R$)",
+      "chartCost": "Custo (R$)"
+    },
+    "productivity": {
+      "efficiency": "Eficiência de Produção",
+      "totalTasks": "Total de Tarefas",
+      "hoursRegistered": "Horas Registradas",
+      "employees": "Colaboradores",
+      "ranking": "Ranking de Conformidade de Equipe",
+      "rankingDesc": "Baseado na conclusão de tarefas atribuídas na Gestão de Produção.",
+      "empty": "Nenhum dado de produtividade disponível ainda.",
+      "tasksCompleted": "{{count}} tarefas concluídas"
+    },
+    "hoursBank": {
+      "totalHours": "Total de Horas (Geral)",
+      "average": "Média por Funcionário",
+      "active": "Funcionários Ativos",
+      "refMonth": "Ref. Mês",
+      "ideal": "Ideal: 160h",
+      "totalRef": "Total: 12",
+      "tableTitle": "Extrato do Banco de Horas",
+      "tableDesc": "Resumo de horas acumuladas por colaborador.",
+      "thEmployee": "Funcionário",
+      "thShifts": "Turnos Realizados",
+      "thAccumulated": "Horas Acumuladas",
+      "thStatus": "Status",
+      "thActions": "Ações",
+      "dialog": {
+        "title": "Extrato de Banco de Horas",
+        "description": "Histórico detalhado de turnos para {{name}}",
+        "totalHours": "Total de Horas",
+        "totalShifts": "Total de Turnos",
+        "averagePerShift": "Média por Turno",
+        "exportIndividual": "Exportar Extrato Individual"
+      }
+    },
+    "waste": {
+      "totalWeight": "Peso Total Desperdiçado",
+      "estimatedCost": "Custo Estimado de Perda",
+      "reductionGoal": "Meta de Redução",
+      "categoryDist": "Desperdício por Categoria",
+      "categoryDistDesc": "Distribuição do volume de perdas.",
+      "trend": "Tendência de Perdas (30 dias)"
+    },
+    "cleaning": {
+      "sanitary": "Conformidade Sanitária (Semanal)",
+      "sanitaryDesc": "Execução dos checklists de limpeza profunda.",
+      "linen": "Higienização de Enxoval",
+      "linenDesc": "Controle de lavanderia e uniformes.",
+      "totalCleaned": "Total Higienizado",
+      "last7Days": "Últimos 7 dias",
+      "linenStatus": "Status do Enxoval",
+      "inUse": "Em uso",
+      "inLaundry": "Em lavanderia",
+      "replacement": "Substituição necessária"
+    },
+    "pdf": {
+      "title": "ROLLS-IN | RELATÓRIO EXECUTIVO",
+      "individualTitle": "ROLLS-IN | EXTRATO INDIVIDUAL",
+      "issuedAt": "Emitido em: {{at}}",
+      "type": "Tipo: {{type}}",
+      "employee": "Colaborador: {{name}}",
+      "totalAccumulated": "Total de Horas Acumuladas: {{hours}}h"
+    }
+  },
   "common": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",

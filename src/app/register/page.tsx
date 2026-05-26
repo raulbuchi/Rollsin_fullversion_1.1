@@ -13,6 +13,12 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PlaceHolderImages } from '@/lib/placeholder-images'
+import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase'
+import { useAuth } from '@/lib/store'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { doc, setDoc, collection } from 'firebase/firestore'
+import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
 
 function isValidCNPJ(cnpj: string): boolean {
   const digits = cnpj.replace(/[^\d]/g, '');
@@ -78,6 +84,12 @@ type RegisterFormValues = z.infer<typeof registerSchema>
 
 export default function RegisterRestaurantPage() {
   const router = useRouter()
+  const auth = useFirebaseAuth()
+  const db = useFirestore()
+  const { login } = useAuth()
+  const { toast } = useToast()
+  const [isRegistering, setIsRegistering] = useState(false)
+
   const logoImg = PlaceHolderImages.find(img => img.id === 'gp-logo')
 
   const {
@@ -100,9 +112,71 @@ export default function RegisterRestaurantPage() {
     }
   })
 
-  const onSubmit = (data: RegisterFormValues) => {
-    // Redirect to login after "success"
-    router.push('/login')
+  const onSubmit = async (data: RegisterFormValues) => {
+    setIsRegistering(true)
+    try {
+      // 1. Create User in Firebase Auth
+      const { user } = await createUserWithEmailAndPassword(auth, data.email, data.pass)
+
+      // 2. Set Display Name
+      await updateProfile(user, { displayName: data.resp })
+
+      // 3. Generate Restaurant ID
+      const restaurantRef = doc(collection(db, 'restaurants'))
+      const restaurantId = restaurantRef.id
+
+      // 4. Create Restaurant Document
+      await setDoc(restaurantRef, {
+        id: restaurantId,
+        name: data.restName,
+        juridicalName: data.jurName,
+        cnpj: data.cnpj,
+        type: data.type,
+        address: data.address,
+        phone: data.phone,
+        ownerId: user.uid,
+        createdAt: new Date().toISOString()
+      })
+
+      // 5. Create User Document in 'users' collection
+      await setDoc(doc(db, 'users', user.uid), {
+        id: user.uid,
+        name: data.resp,
+        email: data.email,
+        role: 'Admin',
+        restaurantId: restaurantId,
+        createdAt: new Date().toISOString()
+      })
+
+      toast({
+        title: "Registro Concluído",
+        description: "Seu restaurante foi cadastrado com sucesso!"
+      })
+
+      // 6. Set Local Session
+      login('Admin', user.uid, restaurantId, data.email)
+
+      // 7. Redirect to Dashboard
+      router.push('/dashboard')
+
+    } catch (error: any) {
+      console.error("Registration Error:", error)
+      let message = "Ocorreu um erro ao realizar o cadastro."
+
+      if (error.code === 'auth/email-already-in-use') {
+        message = "Este e-mail já está sendo utilizado."
+      } else if (error.code === 'auth/weak-password') {
+        message = "A senha é muito fraca."
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Erro no Cadastro",
+        description: message
+      })
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   return (
@@ -202,7 +276,9 @@ export default function RegisterRestaurantPage() {
               {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
             </div>
 
-            <Button type="submit" className="w-full h-12 text-lg font-semibold mt-4">Concluir Registro</Button>
+            <Button type="submit" className="w-full h-12 text-lg font-semibold mt-4" disabled={isRegistering}>
+              {isRegistering ? "Criando conta..." : "Concluir Registro"}
+            </Button>
             
             <p className="text-center text-sm text-muted-foreground mt-4">
               Já possui conta? <Link href="/login" className="text-primary font-semibold hover:underline">Voltar para Login</Link>

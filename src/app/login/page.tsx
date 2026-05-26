@@ -49,18 +49,19 @@ export default function LoginPage() {
       
       if (userDoc.exists()) {
         const userData = userDoc.data()
-        login(userData.role as UserRole, firebaseUser.uid)
+        login(userData.role as UserRole, firebaseUser.uid, userData.restaurantId || 'gp-001', firebaseUser.email || '')
         router.push('/dashboard')
       } else {
         // Fallback profile for authenticated users without firestore record
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
+        const fallbackData = {
           id: firebaseUser.uid,
           name: firebaseUser.email?.split('@')[0] || 'Usuário',
           email: firebaseUser.email,
           role: 'Admin',
           restaurantId: 'gp-001'
-        })
-        login('Admin', firebaseUser.uid)
+        }
+        await setDoc(doc(db, 'users', firebaseUser.uid), fallbackData)
+        login('Admin', firebaseUser.uid, 'gp-001', firebaseUser.email || '')
         router.push('/dashboard')
       }
 
@@ -100,7 +101,7 @@ export default function LoginPage() {
         restaurantId: 'gp-001'
       }, { merge: true })
       
-      login('Admin', firebaseUser.uid)
+      login('Admin', firebaseUser.uid, 'gp-001', 'admin@rollsin.com.br')
       router.push('/dashboard')
       
       toast({

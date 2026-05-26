@@ -51,6 +51,12 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { cn } from '@/lib/utils'
 
+import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/lib/store'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useEffect } from 'react'
+
 // Interfaces locais
 interface ProductionTask {
   id: string
@@ -90,27 +96,35 @@ interface UserProfile {
 const COLORS = ['#2D855A', '#84DB84', '#15803d', '#4ade80', '#065f46']
 
 export default function ReportsPage() {
+  const { t, i18n } = useTranslation()
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
-  const restaurantId = 'gp-001'
-  const [activeTab, setActiveTab] = useState('financeiro')
+  const { toast } = useToast()
+  const restaurantId = localUser?.restaurantId || 'gp-001'
+  const [activeTab, setActiveTab] = useState('financial')
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Queries simplificadas para evitar erros de índice composto
   const tasksQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'productionTasks'), limit(200))
-  }, [db])
+  }, [db, restaurantId])
 
   const wasteQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'wasteRecords'), limit(200))
-  }, [db])
+  }, [db, restaurantId])
 
   const shiftsQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'workShifts'), limit(500))
-  }, [db])
+  }, [db, restaurantId])
 
   const usersQuery = useMemoFirebase(() => {
     if (!db) return null
@@ -130,10 +144,11 @@ export default function ReportsPage() {
 
   // Cálculos de Produtividade com ordenação client-side
   const productivityData = useMemo(() => {
-    if (!rawTasks) return []
+    if (!rawTasks || !Array.isArray(rawTasks)) return []
     const userStats: Record<string, { name: string, completed: number, total: number }> = {}
     
     rawTasks.forEach(t => {
+      if (!t || !t.assignedUserName) return
       if (!userStats[t.assignedUserName]) {
         userStats[t.assignedUserName] = { name: t.assignedUserName, completed: 0, total: 0 }
       }
@@ -143,23 +158,27 @@ export default function ReportsPage() {
 
     return Object.values(userStats).map(s => ({
       name: s.name,
-      taxa: Math.round((s.completed / s.total) * 100),
+      taxa: s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0,
       tarefas: s.completed
     })).sort((a, b) => b.taxa - a.taxa)
   }, [rawTasks])
 
   // Cálculo de Banco de Horas
   const hoursBankData = useMemo(() => {
-    if (!rawShifts) return []
+    if (!rawShifts || !Array.isArray(rawShifts)) return []
     const bank: Record<string, { userId: string, name: string, totalHours: number, shiftsCount: number }> = {}
     
     // Primeiro populamos com todos os funcionários do restaurante
-    restaurantUsers.forEach(u => {
-      bank[u.id] = { userId: u.id, name: u.name, totalHours: 0, shiftsCount: 0 }
-    })
+    if (Array.isArray(restaurantUsers)) {
+      restaurantUsers.forEach(u => {
+        if (!u || !u.id) return
+        bank[u.id] = { userId: u.id, name: u.name, totalHours: 0, shiftsCount: 0 }
+      })
+    }
 
     // Depois somamos as horas dos turnos
     rawShifts.forEach(s => {
+      if (!s || !s.userId) return
       const uId = s.userId
       if (!bank[uId]) {
         // Fallback caso o usuário não esteja na lista de perfis mas tenha turnos
@@ -173,22 +192,23 @@ export default function ReportsPage() {
   }, [rawShifts, restaurantUsers])
 
   const selectedEmployeeShifts = useMemo(() => {
-    if (!selectedEmployeeId || !rawShifts) return []
+    if (!selectedEmployeeId || !rawShifts || !Array.isArray(rawShifts)) return []
     return rawShifts
-      .filter(s => s.userId === selectedEmployeeId)
-      .sort((a, b) => b.date.localeCompare(a.date))
+      .filter(s => s && s.userId === selectedEmployeeId)
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   }, [selectedEmployeeId, rawShifts])
 
   const selectedEmployeeData = useMemo(() => {
-    if (!selectedEmployeeId) return null
+    if (!selectedEmployeeId || !hoursBankData) return null
     return hoursBankData.find(h => h.userId === selectedEmployeeId)
   }, [selectedEmployeeId, hoursBankData])
 
   // Cálculos de Waste
   const wastePieData = useMemo(() => {
-    if (!rawWaste) return []
+    if (!rawWaste || !Array.isArray(rawWaste)) return []
     const types: Record<string, number> = {}
     rawWaste.forEach(w => {
+      if (!w || !w.type) return
       types[w.type] = (types[w.type] || 0) + (w.weight || 0)
     })
     return Object.entries(types).map(([name, value]) => ({ name, value }))
@@ -200,28 +220,35 @@ export default function ReportsPage() {
     
     doc.setFontSize(20)
     doc.setTextColor(45, 133, 90)
-    doc.text('ROLLS-IN | EXTRATO INDIVIDUAL', 14, 22)
+    doc.text(t('reports.pdf.individualTitle'), 14, 22)
     
     doc.setFontSize(14)
     doc.setTextColor(50)
-    doc.text(`Colaborador: ${employee.name}`, 14, 32)
+    doc.text(t('reports.pdf.employee', { name: employee.name }), 14, 32)
     
     doc.setFontSize(10)
     doc.setTextColor(100)
-    doc.text(`Emitido em: ${today}`, 14, 40)
-    doc.text(`Total de Horas Acumuladas: ${employee.totalHours.toFixed(1)}h`, 14, 45)
+    doc.text(t('reports.pdf.issuedAt', { at: today }), 14, 40)
+    doc.text(t('reports.pdf.totalAccumulated', { hours: employee.totalHours.toFixed(1) }), 14, 45)
 
-    const tableData = shifts.map(s => [
-      format(new Date(s.date), 'dd/MM/yyyy'),
-      s.startTime,
-      s.endTime,
-      s.breakMinutes ? `${s.breakMinutes} min` : '0',
-      `${s.totalHours.toFixed(1)}h`
-    ])
+    const tableData = shifts.map(s => {
+      let formattedDate = '-'
+      try {
+        if (s.date) formattedDate = format(new Date(s.date), 'dd/MM/yyyy')
+      } catch (e) { console.error(e) }
+
+      return [
+        formattedDate,
+        s.startTime || '-',
+        s.endTime || '-',
+        s.breakMinutes ? `${s.breakMinutes} min` : '0',
+        `${(s.totalHours || 0).toFixed(1)}h`
+      ]
+    })
 
     autoTable(doc, {
       startY: 55,
-      head: [['Data', 'Início', 'Fim', 'Pausa', 'Total']],
+      head: [[t('reports.table.date'), t('dashboard.punchClock.in'), t('dashboard.punchClock.out'), t('dashboard.punchClock.break'), 'Total']],
       body: tableData,
       headStyles: { fillColor: [45, 133, 90] }
     })
@@ -230,110 +257,126 @@ export default function ReportsPage() {
   }
 
   const handleExportPDF = () => {
+    toast({
+      title: "Gerando Relatório",
+      description: "Aguarde enquanto preparamos seu documento PDF..."
+    })
+
     const doc = new jsPDF()
     const today = format(new Date(), "dd/MM/yyyy HH:mm")
     
     doc.setFontSize(20)
     doc.setTextColor(45, 133, 90)
-    doc.text('ROLLS-IN | RELATÓRIO EXECUTIVO', 14, 22)
+    doc.text(t('reports.pdf.title'), 14, 22)
     
     doc.setFontSize(10)
     doc.setTextColor(100)
-    doc.text(`Emitido em: ${today}`, 14, 30)
-    doc.text(`Tipo: ${activeTab.toUpperCase()}`, 14, 35)
+    doc.text(t('reports.pdf.issuedAt', { at: today }), 14, 30)
+    doc.text(t('reports.pdf.type', { type: t(`reports.tabs.${activeTab}`) }), 14, 35)
 
-    if (activeTab === 'produtividade') {
+    if (activeTab === 'productivity') {
       const tableData = productivityData.map(d => [d.name, `${d.taxa}%`, d.tarefas])
       autoTable(doc, {
         startY: 45,
-        head: [['Funcionário', 'Taxa de Conclusão', 'Tarefas Concluídas']],
+        head: [[t('reports.hoursBank.thEmployee'), t('reports.productivity.ranking'), t('production.table.task')]],
         body: tableData,
         headStyles: { fillColor: [45, 133, 90] }
       })
-    } else if (activeTab === 'banco-horas') {
+    } else if (activeTab === 'hoursBank') {
       const tableData = hoursBankData.map(d => [d.name, d.shiftsCount.toString(), `${d.totalHours.toFixed(1)}h`])
       autoTable(doc, {
         startY: 45,
-        head: [['Funcionário', 'Total de Turnos', 'Total de Horas']],
+        head: [[t('reports.hoursBank.thEmployee'), t('reports.hoursBank.thShifts'), t('reports.hoursBank.thAccumulated')]],
         body: tableData,
         headStyles: { fillColor: [45, 133, 90] }
       })
     } else if (activeTab === 'waste') {
-      // Ordenação por data para o PDF
-      const sortedWaste = rawWaste ? [...rawWaste].sort((a, b) => b.date.localeCompare(a.date)) : []
-      const tableData = sortedWaste.map(w => [format(new Date(w.date), 'dd/MM'), w.type, w.description, `${w.weight}kg`])
+      const sortedWaste = rawWaste ? [...rawWaste].sort((a, b) => (b.date || '').localeCompare(a.date || '')) : []
+      const tableData = sortedWaste.map(w => {
+        let fmtDate = '-'
+        try {
+          if (w.date) fmtDate = format(new Date(w.date), 'dd/MM')
+        } catch (e) {}
+        return [fmtDate, w.type || '-', w.description || '-', `${w.weight || 0}kg`]
+      })
       autoTable(doc, {
         startY: 45,
-        head: [['Data', 'Categoria', 'Descrição', 'Peso']],
+        head: [[t('production.table.date'), t('inventory.fields.category'), t('inventory.fields.name'), 'Peso']],
         body: tableData,
         headStyles: { fillColor: [45, 133, 90] }
       })
     } else {
        doc.text('Relatório detalhado indisponível para esta aba no momento.', 14, 50)
+       doc.text('Os gráficos financeiros são visualizados melhor na tela do sistema.', 14, 58)
     }
 
-    doc.save(`relatorio-rollsin-${activeTab}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+    const fileName = `relatorio-rollsin-${activeTab}-${format(new Date(), 'yyyy-MM-dd')}.pdf`
+    doc.save(fileName)
   }
 
   return (
     <div className="space-y-8 pb-24">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Inteligência Operacional</h1>
-          <p className="text-muted-foreground">Análise de performance, custos e conformidade.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary">{t('reports.title')}</h1>
+          <p className="text-muted-foreground">{t('reports.description')}</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
+          <LanguageSwitcher />
           <Button variant="outline" className="gap-2" onClick={() => window.print()}>
-            <Printer className="w-4 h-4" /> Imprimir
+            <Printer className="w-4 h-4" /> {t('reports.print')}
           </Button>
           <Button className="gap-2" onClick={handleExportPDF}>
-            <FileDown className="w-4 h-4" /> Exportar PDF
+            <FileDown className="w-4 h-4" /> {t('reports.export')}
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="financeiro" value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="financial" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex w-full overflow-x-auto justify-start bg-muted/20 p-1 mb-8">
-          <TabsTrigger value="financeiro" className="gap-2"><DollarSign className="w-4 h-4" /> Financeiro</TabsTrigger>
-          <TabsTrigger value="produtividade" className="gap-2"><Users className="w-4 h-4" /> Produtividade</TabsTrigger>
-          <TabsTrigger value="banco-horas" className="gap-2"><Timer className="w-4 h-4" /> Banco de Horas</TabsTrigger>
-          <TabsTrigger value="waste" className="gap-2"><Trash2 className="w-4 h-4" /> Food Waste</TabsTrigger>
-          <TabsTrigger value="limpeza" className="gap-2"><ClipboardCheck className="w-4 h-4" /> Limpeza & Higiene</TabsTrigger>
+          <TabsTrigger value="financial" className="gap-2"><DollarSign className="w-4 h-4" /> {t('reports.tabs.financial')}</TabsTrigger>
+          <TabsTrigger value="productivity" className="gap-2"><Users className="w-4 h-4" /> {t('reports.tabs.productivity')}</TabsTrigger>
+          <TabsTrigger value="hoursBank" className="gap-2"><Timer className="w-4 h-4" /> {t('reports.tabs.hoursBank')}</TabsTrigger>
+          <TabsTrigger value="waste" className="gap-2"><Trash2 className="w-4 h-4" /> {t('reports.tabs.waste')}</TabsTrigger>
+          <TabsTrigger value="cleaning" className="gap-2"><ClipboardCheck className="w-4 h-4" /> {t('reports.tabs.cleaning')}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="financeiro" className="space-y-8">
+        <TabsContent value="financial" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard title="Faturamento Bruto" value="R$ 42.150,00" trend="+8.2%" positive />
-            <SummaryCard title="CMV Estimado" value="28.4%" trend="-1.5%" positive />
-            <SummaryCard title="Margem de Contribuição" value="R$ 18.200,00" trend="+4.1%" positive />
+            <SummaryCard title={t('reports.financial.revenue')} value="R$ 42.150,00" trend="+8.2%" positive />
+            <SummaryCard title={t('reports.financial.cogs')} value="28.4%" trend="-1.5%" positive />
+            <SummaryCard title={t('reports.financial.margin')} value="R$ 18.200,00" trend="+4.1%" positive />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="text-lg">Fluxo Semanal de Vendas</CardTitle>
-                <CardDescription>Comparativo entre faturamento e custos diretos.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.financial.weeklyFlow')}</CardTitle>
+                <CardDescription>{t('reports.financial.weeklyFlowDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
+                {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={MOCK_REVENUE_DATA}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" />
                     <YAxis />
                     <RechartsTooltip />
-                    <Bar dataKey="revenue" name="Venda (R$)" fill="#2D855A" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="cost" name="Custo (R$)" fill="#84DB84" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="revenue" name={t('reports.financial.chartRevenue')} fill="#2D855A" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="cost" name={t('reports.financial.chartCost')} fill="#84DB84" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="text-lg">Distribuição de Despesas</CardTitle>
-                <CardDescription>Onde seu capital está sendo aplicado.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.financial.expenseDist')}</CardTitle>
+                <CardDescription>{t('reports.financial.expenseDistDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
+                {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -351,23 +394,24 @@ export default function ReportsPage() {
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="produtividade" className="space-y-8">
+        <TabsContent value="productivity" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <StatMiniCard title="Eficiência de Produção" value={`${Math.round(productivityData.reduce((acc, v) => acc + v.taxa, 0) / (productivityData.length || 1))}%`} icon={<Timer className="text-primary" />} />
-             <StatMiniCard title="Total de Tarefas" value={rawTasks?.length?.toString() || '0'} icon={<ChefHat className="text-primary" />} />
-             <StatMiniCard title="Horas Registradas" value={`${rawShifts?.reduce((acc, s) => acc + s.totalHours, 0).toFixed(0)}h`} icon={<Users className="text-primary" />} />
-             <StatMiniCard title="Colaboradores" value={productivityData.length.toString()} icon={<Users className="text-primary" />} />
+             <StatMiniCard title={t('reports.productivity.efficiency')} value={`${Math.round(productivityData.reduce((acc, v) => acc + v.taxa, 0) / (productivityData.length || 1))}%`} icon={<Timer className="text-primary" />} />
+             <StatMiniCard title={t('reports.productivity.totalTasks')} value={rawTasks?.length?.toString() || '0'} icon={<ChefHat className="text-primary" />} />
+             <StatMiniCard title={t('reports.productivity.hoursRegistered')} value={`${(rawShifts || []).reduce((acc, s) => acc + (s.totalHours || 0), 0).toFixed(0)}h`} icon={<Users className="text-primary" />} />
+             <StatMiniCard title={t('reports.productivity.employees')} value={productivityData.length.toString()} icon={<Users className="text-primary" />} />
           </div>
 
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg">Ranking de Conformidade de Equipe</CardTitle>
-              <CardDescription>Baseado na conclusão de tarefas atribuídas na Gestão de Produção.</CardDescription>
+              <CardTitle className="text-lg">{t('reports.productivity.ranking')}</CardTitle>
+              <CardDescription>{t('reports.productivity.rankingDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -379,7 +423,7 @@ export default function ReportsPage() {
                         <span className="font-medium">{item.name}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground">{item.tarefas} tarefas concluídas</span>
+                        <span className="text-muted-foreground">{t('reports.productivity.tasksCompleted', { count: item.tarefas })}</span>
                         <Badge className={item.taxa > 80 ? 'bg-green-500' : 'bg-orange-500'}>{item.taxa}%</Badge>
                       </div>
                     </div>
@@ -389,25 +433,25 @@ export default function ReportsPage() {
                   </div>
                 ))}
                 {productivityData.length === 0 && (
-                  <p className="text-center py-10 text-muted-foreground italic">Nenhum dado de produtividade disponível ainda.</p>
+                  <p className="text-center py-10 text-muted-foreground italic">{t('reports.productivity.empty')}</p>
                 )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="banco-horas" className="space-y-8">
+        <TabsContent value="hoursBank" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard title="Total de Horas (Geral)" value={`${hoursBankData.reduce((acc, v) => acc + v.totalHours, 0).toFixed(0)}h`} trend="Ref. Mês" positive />
-            <SummaryCard title="Média por Funcionário" value={`${(hoursBankData.reduce((acc, v) => acc + v.totalHours, 0) / (hoursBankData.length || 1)).toFixed(1)}h`} trend="Ideal: 160h" positive />
-            <SummaryCard title="Funcionários Ativos" value={hoursBankData.filter(h => h.shiftsCount > 0).length.toString()} trend="Total: 12" positive />
+            <SummaryCard title={t('reports.hoursBank.totalHours')} value={`${hoursBankData.reduce((acc, v) => acc + v.totalHours, 0).toFixed(0)}h`} trend={t('reports.hoursBank.refMonth')} positive />
+            <SummaryCard title={t('reports.hoursBank.average')} value={`${(hoursBankData.reduce((acc, v) => acc + v.totalHours, 0) / (hoursBankData.length || 1)).toFixed(1)}h`} trend={t('reports.hoursBank.ideal')} positive />
+            <SummaryCard title={t('reports.hoursBank.active')} value={hoursBankData.filter(h => h.shiftsCount > 0).length.toString()} trend={t('reports.hoursBank.totalRef')} positive />
           </div>
 
           <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle className="text-lg">Extrato do Banco de Horas</CardTitle>
-                <CardDescription>Resumo de horas acumuladas por colaborador.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.hoursBank.tableTitle')}</CardTitle>
+                <CardDescription>{t('reports.hoursBank.tableDesc')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -415,11 +459,11 @@ export default function ReportsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left border-b text-muted-foreground uppercase text-[10px] font-bold">
-                      <th className="pb-4 pt-2">Funcionário</th>
-                      <th className="pb-4 pt-2 text-center">Turnos Realizados</th>
-                      <th className="pb-4 pt-2 text-center">Horas Acumuladas</th>
-                      <th className="pb-4 pt-2 text-center">Status</th>
-                      <th className="pb-4 pt-2 text-right">Ações</th>
+                      <th className="pb-4 pt-2">{t('reports.hoursBank.thEmployee')}</th>
+                      <th className="pb-4 pt-2 text-center">{t('reports.hoursBank.thShifts')}</th>
+                      <th className="pb-4 pt-2 text-center">{t('reports.hoursBank.thAccumulated')}</th>
+                      <th className="pb-4 pt-2 text-center">{t('reports.hoursBank.thStatus')}</th>
+                      <th className="pb-4 pt-2 text-right">{t('reports.hoursBank.thActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -459,25 +503,25 @@ export default function ReportsPage() {
                               <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2 text-2xl font-black font-headline text-primary">
                                   <Timer className="w-6 h-6" />
-                                  Extrato de Banco de Horas
+                                  {t('reports.hoursBank.dialog.title')}
                                 </DialogTitle>
                                 <DialogDescription>
-                                  Histórico detalhado de turnos para <strong>{item.name}</strong>
+                                  {t('reports.hoursBank.dialog.description', { name: item.name })}
                                 </DialogDescription>
                               </DialogHeader>
                               
                               <div className="mt-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                                    <p className="text-[10px] font-bold uppercase text-primary/60 mb-1">Total de Horas</p>
+                                    <p className="text-[10px] font-bold uppercase text-primary/60 mb-1">{t('reports.hoursBank.dialog.totalHours')}</p>
                                     <p className="text-3xl font-black text-primary">{item.totalHours.toFixed(1)}h</p>
                                   </div>
                                   <div className="bg-muted/30 p-4 rounded-xl border border-muted">
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Total de Turnos</p>
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{t('reports.hoursBank.dialog.totalShifts')}</p>
                                     <p className="text-3xl font-black text-muted-foreground">{item.shiftsCount}</p>
                                   </div>
                                   <div className="bg-muted/30 p-4 rounded-xl border border-muted">
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Média por Turno</p>
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">{t('reports.hoursBank.dialog.averagePerShift')}</p>
                                     <p className="text-3xl font-black text-muted-foreground">
                                       {item.shiftsCount > 0 ? (item.totalHours / item.shiftsCount).toFixed(1) : '0'}h
                                     </p>
@@ -488,29 +532,35 @@ export default function ReportsPage() {
                                   <table className="w-full text-sm">
                                     <thead className="bg-muted/50">
                                       <tr className="text-left text-[10px] font-bold uppercase text-muted-foreground">
-                                        <th className="px-4 py-3">Data</th>
-                                        <th className="px-4 py-3">Início</th>
-                                        <th className="px-4 py-3">Fim</th>
-                                        <th className="px-4 py-3 text-center">Pausa</th>
+                                        <th className="px-4 py-3">{t('production.table.date')}</th>
+                                        <th className="px-4 py-3">{t('dashboard.punchClock.in')}</th>
+                                        <th className="px-4 py-3">{t('dashboard.punchClock.out')}</th>
+                                        <th className="px-4 py-3 text-center">{t('dashboard.punchClock.break')}</th>
                                         <th className="px-4 py-3 text-right">Total</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                      {selectedEmployeeShifts.map((shift) => (
+                                      {selectedEmployeeShifts.map((shift) => {
+                                        let fmtDate = '-'
+                                        try {
+                                          if (shift.date) fmtDate = format(new Date(shift.date), "dd/MM/yyyy", { locale: (i18n.language || 'pt').startsWith('pt') ? ptBR : undefined })
+                                        } catch (e) {}
+
+                                        return (
                                         <tr key={shift.id} className="hover:bg-muted/20 transition-colors">
                                           <td className="px-4 py-3 font-medium">
-                                            {format(new Date(shift.date), "dd/MM/yyyy", { locale: ptBR })}
+                                            {fmtDate}
                                           </td>
-                                          <td className="px-4 py-3">{shift.startTime}</td>
-                                          <td className="px-4 py-3">{shift.endTime}</td>
+                                          <td className="px-4 py-3">{shift.startTime || '-'}</td>
+                                          <td className="px-4 py-3">{shift.endTime || '-'}</td>
                                           <td className="px-4 py-3 text-center text-muted-foreground">
                                             {shift.breakMinutes ? `${shift.breakMinutes}m` : '-'}
                                           </td>
                                           <td className="px-4 py-3 text-right font-bold text-primary">
-                                            {shift.totalHours.toFixed(1)}h
+                                            {(shift.totalHours || 0).toFixed(1)}h
                                           </td>
                                         </tr>
-                                      ))}
+                                      )})}
                                     </tbody>
                                   </table>
                                 </div>
@@ -520,7 +570,7 @@ export default function ReportsPage() {
                                     className="gap-2"
                                     onClick={() => handleExportIndividualPDF(item, selectedEmployeeShifts)}
                                   >
-                                    <FileDown className="w-4 h-4" /> Exportar Extrato Individual
+                                    <FileDown className="w-4 h-4" /> {t('reports.hoursBank.dialog.exportIndividual')}
                                   </Button>
                                 </div>
                               </div>
@@ -529,11 +579,6 @@ export default function ReportsPage() {
                         </td>
                       </tr>
                     ))}
-                    {hoursBankData.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="py-10 text-center text-muted-foreground italic">Nenhum registro de turno encontrado.</td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -543,18 +588,29 @@ export default function ReportsPage() {
 
         <TabsContent value="waste" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard title="Peso Total Desperdiçado" value={`${rawWaste?.reduce((acc, w) => acc + (w.weight || 0), 0).toFixed(1)} kg`} trend="+2%" positive={false} />
-            <SummaryCard title="Custo Estimado de Perda" value={`R$ ${(rawWaste?.reduce((acc, w) => acc + (w.weight || 0), 0) * 12).toFixed(2)}`} trend="+5%" positive={false} />
-            <SummaryCard title="Meta de Redução" value="< 2.0%" trend="OK" positive />
+            <SummaryCard
+              title={t('reports.waste.totalWeight')}
+              value={`${(rawWaste || []).reduce((acc, w) => acc + (w.weight || 0), 0).toFixed(1)} kg`}
+              trend="+2%"
+              positive={false}
+            />
+            <SummaryCard
+              title={t('reports.waste.estimatedCost')}
+              value={`R$ ${((rawWaste || []).reduce((acc, w) => acc + (w.weight || 0), 0) * 12).toFixed(2)}`}
+              trend="+5%"
+              positive={false}
+            />
+            <SummaryCard title={t('reports.waste.reductionGoal')} value="< 2.0%" trend="OK" positive />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="text-lg">Desperdício por Categoria</CardTitle>
-                <CardDescription>Distribuição do volume de perdas.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.waste.categoryDist')}</CardTitle>
+                <CardDescription>{t('reports.waste.categoryDistDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
+                {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -572,14 +628,16 @@ export default function ReportsPage() {
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="text-lg">Tendência de Perdas (30 dias)</CardTitle>
+                <CardTitle className="text-lg">{t('reports.waste.trend')}</CardTitle>
               </CardHeader>
               <CardContent className="h-[300px]">
+                {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={MOCK_WASTE_TREND}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -589,17 +647,18 @@ export default function ReportsPage() {
                     <Line type="monotone" dataKey="peso" name="Peso (kg)" stroke="#2D855A" strokeWidth={3} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="limpeza" className="space-y-8">
+        <TabsContent value="cleaning" className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="shadow-md">
               <CardHeader className="bg-primary/5">
-                <CardTitle className="text-lg">Conformidade Sanitária (Semanal)</CardTitle>
-                <CardDescription>Execução dos checklists de limpeza profunda.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.cleaning.sanitary')}</CardTitle>
+                <CardDescription>{t('reports.cleaning.sanitaryDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 <CleaningMetric label="Limpeza de Exaustores" value={100} date="Segunda-feira" />
@@ -611,29 +670,29 @@ export default function ReportsPage() {
 
             <Card className="shadow-md">
               <CardHeader className="bg-secondary/5">
-                <CardTitle className="text-lg">Higienização de Enxoval</CardTitle>
-                <CardDescription>Controle de lavanderia e uniformes.</CardDescription>
+                <CardTitle className="text-lg">{t('reports.cleaning.linen')}</CardTitle>
+                <CardDescription>{t('reports.cleaning.linenDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg">
                   <div>
-                    <p className="font-bold">Total Higienizado</p>
-                    <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
+                    <p className="font-bold">{t('reports.cleaning.totalCleaned')}</p>
+                    <p className="text-xs text-muted-foreground">{t('reports.cleaning.last7Days')}</p>
                   </div>
                   <span className="text-2xl font-black text-secondary">142 peças</span>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase text-muted-foreground">Status do Enxoval</p>
+                  <p className="text-xs font-bold uppercase text-muted-foreground">{t('reports.cleaning.linenStatus')}</p>
                   <div className="flex justify-between text-xs py-1 border-b">
-                    <span>Em uso</span>
+                    <span>{t('reports.cleaning.inUse')}</span>
                     <span className="font-bold">85%</span>
                   </div>
                   <div className="flex justify-between text-xs py-1 border-b">
-                    <span>Em lavanderia</span>
+                    <span>{t('reports.cleaning.inLaundry')}</span>
                     <span className="font-bold">12%</span>
                   </div>
                   <div className="flex justify-between text-xs py-1 border-b text-destructive">
-                    <span>Substituição necessária</span>
+                    <span>{t('reports.cleaning.replacement')}</span>
                     <span className="font-bold">3%</span>
                   </div>
                 </div>

@@ -169,6 +169,296 @@
       "added": "Item added to shopping list."
     }
   },
+  "dashboard": {
+    "title": "Rolls-In Dashboard",
+    "welcome": "Hello, {{name}}. Manage your operation with excellence.",
+    "stats": {
+      "sales": "Sales Today",
+      "orders": "Orders",
+      "waiting": "waiting",
+      "cmv": "Average COGS",
+      "waste": "Waste Today",
+      "vsYesterday": "vs yesterday"
+    },
+    "alerts": {
+      "expiration": {
+        "title": "Attention! Supplies near expiration",
+        "expired": "Expired {{days}} days ago",
+        "today": "Expires today",
+        "inDays": "Expires in {{days}} days"
+      }
+    },
+    "production": {
+      "title": "Today's Production",
+      "description": "Your direct tasks for today's shift.",
+      "empty": "No production tasks assigned to you today.",
+      "completedAt": "Completed at {{time}}"
+    },
+    "punchClock": {
+      "title": "Punch Clock",
+      "description": "Record your journey today.",
+      "in": "In",
+      "out": "Out",
+      "break": "Break (minutes)",
+      "register": "Register Shift",
+      "registering": "Registering..."
+    },
+    "fixedChecklists": {
+      "title": "Fixed Checklists",
+      "groups": {
+        "opening": "Opening",
+        "closing": "Closing"
+      },
+      "tasks": {
+        "ac": "AC & Sound",
+        "tables": "Tables",
+        "cashier": "Cashier",
+        "closingCashier": "Close Cashier",
+        "cleaning": "Cleaning",
+        "trash": "Trash"
+      }
+    }
+  },
+  "checklists": {
+    "title": "Operation Checklists",
+    "description": "Ensure excellence and consistency in your restaurant's processes.",
+    "pdfReport": "PDF Report",
+    "create": "Create Checklist",
+    "newDialog": {
+      "title": "New Operational Checklist",
+      "description": "Create a new task category for your team.",
+      "fieldTitle": "Checklist Title",
+      "fieldDesc": "Description / Goal",
+      "placeholderTitle": "Ex: Weekly Cleaning",
+      "placeholderDesc": "Describe the purpose of this process..."
+    },
+    "taskDialog": {
+      "title": "Add Topic to Checklist",
+      "description": "Insert a new task to be executed in this checklist.",
+      "fieldLabel": "Task / Topic Name",
+      "fieldDate": "Scheduled Date (Optional)",
+      "fieldTime": "Scheduled Time (Optional)",
+      "placeholderLabel": "Ex: Check fridge stock"
+    },
+    "deleteDialog": {
+      "title": "Delete Checklist?",
+      "description": "This action will permanently delete the checklist \"{{title}}\" and all its topics."
+    },
+    "deleteTaskDialog": {
+      "title": "Delete Topic?",
+      "description": "Are you sure you want to delete the task \"{{label}}\" from this checklist?"
+    },
+    "progress": "{{percent}}% completed",
+    "realExecution": "Real execution:",
+    "scheduled": "Date: {{date}} Time: {{time}}",
+    "executed": "Executed: {{at}}",
+    "empty": "This checklist has no topics yet.",
+    "addFirst": "Add first topic now",
+    "pdf": {
+      "title": "ROLLS-IN | COMPLIANCE REPORT",
+      "checklist": "Checklist: {{title}}",
+      "date": "Date: {{date}}",
+      "compliance": "Compliance Rate: {{progress}}%",
+      "table": {
+        "task": "Task",
+        "status": "Status",
+        "scheduled": "Scheduled",
+        "executed": "Executed",
+        "completed": "COMPLETED",
+        "pending": "PENDING"
+      },
+      "signature": "Shift Supervisor's Signature"
+    },
+    "defaultGroups": {
+      "opening": {
+        "title": "Room Opening",
+        "desc": "Essential tasks before the first customer arrives.",
+        "tasks": {
+          "ac": "Turn on AC and ambient sound",
+          "cleaning": "Check table and chair cleanliness",
+          "menus": "Check physical and digital menus",
+          "beverages": "Set up beverage station (coffee, water, ice)",
+          "bathrooms": "Check bathrooms (paper, soap, cleaning)",
+          "cashier": "Open cashier with confirmed change"
+        }
+      },
+      "kitchen": {
+        "title": "Mise en Place (Kitchen)",
+        "desc": "Basic ingredient preparation for the shift.",
+        "tasks": {
+          "wash": "Sanitizing produce",
+          "portions": "Protein portioning",
+          "sauces": "Preparation of base sauces and broths",
+          "expiration": "Check expiration of all pre-preparations",
+          "knives": "Knife sharpening and counter cleaning",
+          "fridges": "Check refrigerator temperature"
+        }
+      },
+      "weekly": {
+        "title": "Weekly Cleaning",
+        "desc": "Deep maintenance and scheduled heavy cleaning.",
+        "tasks": {
+          "fridges": "Deep cleaning and defrosting of refrigerators",
+          "uniforms": "Washing and sanitizing team uniforms",
+          "filters": "Clean exhaust hoods and change filters",
+          "grease": "Cleaning grease traps",
+          "windows": "Cleaning windows, facades and lighting fixtures",
+          "stock": "Organizing and sweeping dry stock"
+        }
+      },
+      "outsourced": {
+        "title": "Outsourced Control",
+        "desc": "Monitoring of maintenance and external cleaning services.",
+        "tasks": {
+          "pest": "Pest Control (Certified)",
+          "ducts": "Technical Cleaning of Exhausts and Ducts",
+          "water": "Water Tank Sanitization",
+          "ac": "Air Conditioning Maintenance (PMOC)",
+          "waste": "Special Waste / Used Oil Collection",
+          "facade": "High-rise Window / Facade Cleaning",
+          "uniforms": "Washing and Sanitizing Uniforms (External Service)"
+        }
+      },
+      "closing": {
+        "title": "Closing",
+        "desc": "Safety and post-service cleaning procedures.",
+        "tasks": {
+          "cashier": "Cashier closing and withdrawal",
+          "cleaning": "Cleaning griddles, ovens and stoves",
+          "trash": "Taking out trash and sanitizing bins",
+          "gas": "Check if gas and equipment are turned off",
+          "alarm": "Lock all doors and activate alarm"
+        }
+      }
+    }
+  },
+  "production": {
+    "title": "Production Management",
+    "description": "Assign direct tasks and track your team's progress.",
+    "delegate": "Delegate Task",
+    "newDialog": {
+      "title": "New Production Task",
+      "description": "The task will appear on the chosen employee's checklist.",
+      "responsible": "Responsible Employee",
+      "taskName": "Task Name",
+      "taskDesc": "Description / Instructions",
+      "date": "Execution Date",
+      "loading": "Loading team...",
+      "select": "Select...",
+      "none": "No employees found",
+      "placeholderName": "Ex: Portion 20kg of steak",
+      "placeholderDesc": "Specific details...",
+      "success": "Task Assigned",
+      "successDesc": "Task sent to {{name}}."
+    },
+    "editDialog": {
+      "title": "Edit and Reassign Task",
+      "description": "Adjust task details or move it to another employee/date.",
+      "success": "Task Updated",
+      "successDesc": "The changes have been saved."
+    },
+    "deleteDialog": {
+      "title": "Delete Task?",
+      "description": "Are you sure you want to delete the task \"{{name}}\"? This action cannot be undone."
+    },
+    "table": {
+      "title": "Task Control Panel",
+      "date": "Date",
+      "employee": "Employee",
+      "task": "Task",
+      "status": "Status",
+      "actions": "Actions",
+      "loading": "Loading tasks...",
+      "empty": "No tasks assigned yet. Start by delegating a task using the button above.",
+      "completed": "Completed",
+      "pending": "Pending"
+    }
+  },
+  "reports": {
+    "title": "Operational Intelligence",
+    "description": "Performance, cost and compliance analysis.",
+    "print": "Print",
+    "export": "Export PDF",
+    "tabs": {
+      "financial": "Financial",
+      "productivity": "Productivity",
+      "hoursBank": "Hours Bank",
+      "waste": "Food Waste",
+      "cleaning": "Cleaning & Hygiene"
+    },
+    "financial": {
+      "revenue": "Gross Revenue",
+      "cogs": "Estimated COGS",
+      "margin": "Contribution Margin",
+      "weeklyFlow": "Weekly Sales Flow",
+      "weeklyFlowDesc": "Comparison between revenue and direct costs.",
+      "expenseDist": "Expense Distribution",
+      "expenseDistDesc": "Where your capital is being applied.",
+      "chartRevenue": "Sales ($)",
+      "chartCost": "Cost ($)"
+    },
+    "productivity": {
+      "efficiency": "Production Efficiency",
+      "totalTasks": "Total Tasks",
+      "hoursRegistered": "Registered Hours",
+      "employees": "Collaborators",
+      "ranking": "Team Compliance Ranking",
+      "rankingDesc": "Based on completion of tasks assigned in Production Management.",
+      "empty": "No productivity data available yet.",
+      "tasksCompleted": "{{count}} tasks completed"
+    },
+    "hoursBank": {
+      "totalHours": "Total Hours (Overall)",
+      "average": "Average per Employee",
+      "active": "Active Employees",
+      "refMonth": "Ref. Month",
+      "ideal": "Ideal: 160h",
+      "totalRef": "Total: 12",
+      "tableTitle": "Hours Bank Statement",
+      "tableDesc": "Summary of accumulated hours per collaborator.",
+      "thEmployee": "Employee",
+      "thShifts": "Shifts Performed",
+      "thAccumulated": "Accumulated Hours",
+      "thStatus": "Status",
+      "thActions": "Actions",
+      "dialog": {
+        "title": "Hours Bank Statement",
+        "description": "Detailed shift history for {{name}}",
+        "totalHours": "Total Hours",
+        "totalShifts": "Total Shifts",
+        "averagePerShift": "Average per Shift",
+        "exportIndividual": "Export Individual Statement"
+      }
+    },
+    "waste": {
+      "totalWeight": "Total Weight Wasted",
+      "estimatedCost": "Estimated Loss Cost",
+      "reductionGoal": "Reduction Goal",
+      "categoryDist": "Waste by Category",
+      "categoryDistDesc": "Distribution of loss volume.",
+      "trend": "Waste Trend (30 days)"
+    },
+    "cleaning": {
+      "sanitary": "Sanitary Compliance (Weekly)",
+      "sanitaryDesc": "Execution of deep cleaning checklists.",
+      "linen": "Linen Sanitization",
+      "linenDesc": "Laundry and uniform control.",
+      "totalCleaned": "Total Sanitized",
+      "last7Days": "Last 7 days",
+      "linenStatus": "Linen Status",
+      "inUse": "In use",
+      "inLaundry": "In laundry",
+      "replacement": "Replacement needed"
+    },
+    "pdf": {
+      "title": "ROLLS-IN | EXECUTIVE REPORT",
+      "individualTitle": "ROLLS-IN | INDIVIDUAL STATEMENT",
+      "issuedAt": "Issued at: {{at}}",
+      "type": "Type: {{type}}",
+      "employee": "Collaborator: {{name}}",
+      "totalAccumulated": "Total Accumulated Hours: {{hours}}h"
+    }
+  },
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",

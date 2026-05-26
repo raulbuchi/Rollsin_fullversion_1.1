@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, Pencil, Trash2, Shirt } from 'lucide-react'
+import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc } from 'firebase/firestore'
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
@@ -45,10 +46,11 @@ interface UniformItem {
 }
 
 export default function UniformsPage() {
+  const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
   const { toast } = useToast()
-  const restaurantId = 'gp-001'
+  const restaurantId = localUser?.restaurantId || 'gp-001'
   
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState('Todos')
@@ -69,9 +71,9 @@ export default function UniformsPage() {
   }
 
   const uniformsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
+    if (!db || !user || !restaurantId) return null
     return query(collection(db, 'restaurants', restaurantId, 'uniforms'))
-  }, [db, user])
+  }, [db, user, restaurantId])
 
   const { data: uniforms, isLoading } = useCollection<UniformItem>(uniformsQuery)
 

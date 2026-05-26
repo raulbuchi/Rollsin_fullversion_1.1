@@ -15,14 +15,14 @@ const ReceiptSchema = z.object({
   )
 });
 
-export async function extractReceiptItems(imageBase64: string) {
+export async function extractReceiptItems(imageBase64: string, apiKey?: string) {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("NEXT_PUBLIC_GEMINI_API_KEY missing");
+    const finalApiKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!finalApiKey) {
+      throw new Error("Chave de API do Gemini não configurada. Vá em Configurações.");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(finalApiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Clean base64 if needed
