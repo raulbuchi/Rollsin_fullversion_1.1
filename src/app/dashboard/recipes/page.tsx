@@ -402,7 +402,7 @@ export default function RecipesPage() {
       id: Math.random().toString(36).substr(2, 9),
       name: 'Nova Ficha Técnica',
       category: cat,
-      photoUrl: photoBase64,
+      ...(photoBase64 ? { photoUrl: photoBase64 } : {}),
       ingredients: [],
       profitMargin: 30,
       tax: 4,
@@ -453,11 +453,19 @@ export default function RecipesPage() {
       id: activeRecipeId,
       name: editingName || 'Ficha Técnica',
       category: editingCategory || 'Pratos Principais',
-      photoUrl: editingPhoto,
-      ingredients: editingIngredients.map(ing => ({
-        ...ing,
-        cost: getIngredientCost(ing)
-      })),
+      ...(editingPhoto ? { photoUrl: editingPhoto } : {}),
+      ingredients: editingIngredients.map(ing => {
+        const cleanIng: Ingredient = {
+          id: ing.id,
+          name: ing.name,
+          qty: ing.qty,
+          cost: getIngredientCost(ing)
+        }
+        if (ing.manualCostOverride !== undefined) {
+          cleanIng.manualCostOverride = ing.manualCostOverride
+        }
+        return cleanIng
+      }),
       profitMargin,
       tax,
       cardFee,
