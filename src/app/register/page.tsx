@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,11 +15,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PlaceHolderImages } from '@/lib/placeholder-images'
 import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase'
-import { useAuth } from '@/lib/store'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc, collection } from 'firebase/firestore'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
-import { useState } from 'react'
 
 function isValidCNPJ(cnpj: string): boolean {
   const digits = cnpj.replace(/[^\d]/g, '');
@@ -84,13 +83,11 @@ type RegisterFormValues = z.infer<typeof registerSchema>
 
 export default function RegisterRestaurantPage() {
   const router = useRouter()
+  const logoImg = PlaceHolderImages.find(img => img.id === 'gp-logo')
   const auth = useFirebaseAuth()
   const db = useFirestore()
-  const { login } = useAuth()
   const { toast } = useToast()
   const [isRegistering, setIsRegistering] = useState(false)
-
-  const logoImg = PlaceHolderImages.find(img => img.id === 'gp-logo')
 
   const {
     register,
@@ -115,60 +112,52 @@ export default function RegisterRestaurantPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsRegistering(true)
     try {
+      const cleanEmail = data.email.trim().toLowerCase()
       // 1. Create User in Firebase Auth
-      const { user } = await createUserWithEmailAndPassword(auth, data.email, data.pass)
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, cleanEmail, data.pass)
+      
+      const restId = 'gp-' + Math.random().toString(36).substring(2, 11)
 
-      // 2. Set Display Name
-      await updateProfile(user, { displayName: data.resp })
-
-      // 3. Generate Restaurant ID
-      const restaurantRef = doc(collection(db, 'restaurants'))
-      const restaurantId = restaurantRef.id
-
-      // 4. Create Restaurant Document
-      await setDoc(restaurantRef, {
-        id: restaurantId,
+      // 2. Create the restaurant document in Firestore
+      await setDoc(doc(db, 'restaurants', restId), {
+        id: restId,
         name: data.restName,
         juridicalName: data.jurName,
         cnpj: data.cnpj,
         type: data.type,
-        address: data.address,
+        responsibleName: data.resp,
+        email: cleanEmail,
         phone: data.phone,
-        ownerId: user.uid,
+        address: data.address,
         createdAt: new Date().toISOString()
       })
 
-      // 5. Create User Document in 'users' collection
-      await setDoc(doc(db, 'users', user.uid), {
-        id: user.uid,
+      // 3. Create the user document in Firestore users collection
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        id: firebaseUser.uid,
         name: data.resp,
-        email: data.email,
+        email: cleanEmail,
         role: 'Admin',
-        restaurantId: restaurantId,
+        restaurantId: restId,
         createdAt: new Date().toISOString()
       })
 
       toast({
-        title: "Registro Concluído",
-        description: "Seu restaurante foi cadastrado com sucesso!"
+        title: "Sucesso!",
+        description: "Seu restaurante foi cadastrado com sucesso. Faça o login para acessar.",
       })
 
-      // 6. Set Local Session
-      login('Admin', user.uid, restaurantId, data.email)
-
-      // 7. Redirect to Dashboard
-      router.push('/dashboard')
-
+      router.push('/login')
     } catch (error: any) {
-      console.error("Registration Error:", error)
-      let message = "Ocorreu um erro ao realizar o cadastro."
-
+      console.error("Register Error:", error)
+      let message = "Ocorreu um erro ao realizar o cadastro. Tente novamente."
       if (error.code === 'auth/email-already-in-use') {
-        message = "Este e-mail já está sendo utilizado."
+        message = "Este e-mail já está em uso por outro usuário."
       } else if (error.code === 'auth/weak-password') {
-        message = "A senha é muito fraca."
+        message = "A senha fornecida é muito fraca."
+      } else if (error.code === 'auth/invalid-email') {
+        message = "O e-mail fornecido é inválido."
       }
-
       toast({
         variant: "destructive",
         title: "Erro no Cadastro",
@@ -277,7 +266,7 @@ export default function RegisterRestaurantPage() {
             </div>
 
             <Button type="submit" className="w-full h-12 text-lg font-semibold mt-4" disabled={isRegistering}>
-              {isRegistering ? "Criando conta..." : "Concluir Registro"}
+              {isRegistering ? "Cadastrando..." : "Concluir Registro"}
             </Button>
             
             <p className="text-center text-sm text-muted-foreground mt-4">

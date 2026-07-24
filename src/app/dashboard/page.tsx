@@ -67,6 +67,14 @@ interface Ingredient {
   expirationDate?: string
 }
 
+interface OrderData {
+  id: string
+  restaurantId: string
+  status: string
+  totalAmount: number
+  orderDateTime: string
+}
+
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
   const { user: localUser } = useAuth()
@@ -81,7 +89,7 @@ export default function DashboardPage() {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
 
-  // Queries simplificadas para evitar erros de índice
+  // Queries
   const myShiftsQuery = useMemoFirebase(() => {
     if (!db || !firebaseUser?.uid) return null
     return query(
@@ -108,10 +116,70 @@ export default function DashboardPage() {
     return query(collection(db, 'restaurants', restaurantId, 'ingredients'))
   }, [db])
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(collection(db, 'restaurants', restaurantId, 'orders'))
+  }, [db])
+
+  const recipesQuery = useMemoFirebase(() => {
+    if (!db) return null
+    return query(collection(db, 'restaurants', restaurantId, 'recipes'))
+  }, [db])
+
   const { data: rawShifts } = useCollection<WorkShift>(myShiftsQuery)
   const { data: rawWaste } = useCollection<WasteRecord>(wasteQuery)
   const { data: rawTasks } = useCollection<ProductionTask>(myTasksQuery)
   const { data: rawIngredients } = useCollection<Ingredient>(ingredientsQuery)
+  const { data: rawOrders } = useCollection<OrderData>(ordersQuery)
+  const { data: rawRecipes } = useCollection<any>(recipesQuery)
+
+  const yesterdayStr = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd')
+
+  // Dynamic Metrics Calculation
+  const todaySales = useMemo(() => {
+    if (!rawOrders) return 0
+    return rawOrders
+      .filter(o => o.orderDateTime && o.orderDateTime.startsWith(todayStr))
+      .reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0)
+  }, [rawOrders, todayStr])
+
+  const yesterdaySales = useMemo(() => {
+    if (!rawOrders) return 0
+    return rawOrders
+      .filter(o => o.orderDateTime && o.orderDateTime.startsWith(yesterdayStr))
+      .reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0)
+  }, [rawOrders, yesterdayStr])
+
+  const salesChangeText = useMemo(() => {
+    if (yesterdaySales === 0) {
+      if (todaySales === 0) return `0.0% ${t('dashboard.stats.vsYesterday')}`
+      return `+100% ${t('dashboard.stats.vsYesterday')}`
+    }
+    const diff = ((todaySales - yesterdaySales) / yesterdaySales) * 100
+    const sign = diff >= 0 ? '+' : ''
+    return `${sign}${diff.toFixed(1)}% ${t('dashboard.stats.vsYesterday')}`
+  }, [todaySales, yesterdaySales, t])
+
+  const activeOrdersCount = useMemo(() => {
+    if (!rawOrders) return 0
+    return rawOrders.filter(o => o.status !== 'Completed' && o.status !== 'Finalizado').length
+  }, [rawOrders])
+
+  const waitingOrdersCount = useMemo(() => {
+    if (!rawOrders) return 0
+    return rawOrders.filter(o => o.status === 'Pending' || o.status === 'Aguardando').length
+  }, [rawOrders])
+
+  const cmvValue = useMemo(() => {
+    if (!rawRecipes || rawRecipes.length === 0 || todaySales === 0) return '0.0%'
+    const totalCost = rawRecipes.reduce((acc: number, r: any) => acc + (Number(r.totalCost) || Number(r.cost) || 0), 0)
+    const totalSalePrice = rawRecipes.reduce((acc: number, r: any) => acc + (Number(r.suggestedPrice) || Number(r.price) || 0), 0)
+    if (totalSalePrice > 0) {
+      const pct = (totalCost / totalSalePrice) * 100
+      return `${pct.toFixed(1)}%`
+    }
+    return '0.0%'
+  }, [rawRecipes, todaySales])
 
   // Filtros client-side para evitar índices compostos
   const myTasks = useMemo(() => {
@@ -124,7 +192,7 @@ export default function DashboardPage() {
   const dailyHours = useMemo(() => {
     return rawShifts
       ?.filter(s => s.date === todayStr)
-      .reduce((acc, s) => acc + s.totalHours, 0) || 0
+      .reduce((acc, s) => acc + (s.totalHours || 0), 0) || 0
   }, [rawShifts, todayStr])
 
   const monthlyHours = useMemo(() => {
@@ -133,7 +201,7 @@ export default function DashboardPage() {
         const d = parseISO(s.date)
         return d >= currentMonthStart && d <= currentMonthEnd
       })
-      .reduce((acc, s) => acc + s.totalHours, 0) || 0
+      .reduce((acc, s) => acc + (s.totalHours || 0), 0) || 0
   }, [rawShifts, currentMonthStart, currentMonthEnd])
 
   const totalWasteToday = useMemo(() => {
@@ -143,10 +211,10 @@ export default function DashboardPage() {
   }, [rawWaste, todayStr])
 
   const wasteStatus = useMemo(() => {
-    if (totalWasteToday === 0) return { color: 'bg-green-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
-    if (totalWasteToday <= 2) return { color: 'bg-green-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
-    if (totalWasteToday <= 5) return { color: 'bg-yellow-500', label: 'Alerta', message: 'Volume de perdas aumentando.' }
-    return { color: 'bg-red-500', label: t('inventory.status.critical'), message: 'Desperdício excessivo! Revisar processos.' }
+    if (totalWasteToday === 0) return { color: 'bg-emerald-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
+    if (totalWasteToday <= 2) return { color: 'bg-emerald-500', label: t('inventory.status.normal'), message: t('dashboard.stats.wasteHealthy') }
+    if (totalWasteToday <= 5) return { color: 'bg-amber-500', label: 'Alerta', message: 'Volume de perdas aumentando.' }
+    return { color: 'bg-rose-500', label: t('inventory.status.critical'), message: 'Desperdício excessivo! Revisar processos.' }
   }, [totalWasteToday, t])
 
   const expirationAlerts = useMemo(() => {
@@ -158,8 +226,6 @@ export default function DashboardPage() {
 
     rawIngredients.forEach((item) => {
       if (item.expirationDate) {
-        // Assume expirationDate is "YYYY-MM-DD"
-        // parseISO will handle the correct offset if we're careful, but to avoid timezone issues:
         const [year, month, day] = item.expirationDate.split('-').map(Number)
         const expDate = new Date(year, month - 1, day)
         
@@ -204,34 +270,36 @@ export default function DashboardPage() {
     })
   }
 
+  const formattedSales = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(todaySales)
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline mb-2 text-primary">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground">{t('dashboard.welcome', { name: localUser?.name })}</p>
+          <h1 className="text-3xl font-bold font-headline mb-1 text-primary tracking-tight">{t('dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('dashboard.welcome', { name: localUser?.name })}</p>
         </div>
         
-        <div className="flex gap-4">
-          <div className="bg-card p-3 rounded-2xl border flex items-center gap-3 shadow-sm">
-            <div className={`w-8 h-8 rounded-full ${wasteStatus.color} animate-pulse flex items-center justify-center`}>
-              <Trash2 className="w-4 h-4 text-white" />
-            </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-card px-4 py-2.5 rounded-xl border flex items-center gap-3 shadow-sm">
+            <div className={`w-3 h-3 rounded-full ${wasteStatus.color} animate-pulse`} />
             <div>
-              <p className="text-[8px] uppercase font-bold text-muted-foreground">Waste Health</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{t('dashboard.stats.wasteHealth')}</p>
               <p className="text-xs font-black uppercase tracking-tight">{wasteStatus.label}</p>
             </div>
           </div>
 
-          <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 flex gap-6">
+          <div className="bg-primary/5 px-4 py-2.5 rounded-xl border border-primary/20 flex items-center gap-5 shadow-sm">
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('dashboard.stats.today') || 'Hoje'}</p>
-              <p className="text-xl font-black text-primary">{dailyHours.toFixed(1)}h</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{t('dashboard.stats.today') || 'Hoje'}</p>
+              <p className="text-lg font-black text-primary">{dailyHours.toFixed(1)}h</p>
             </div>
-            <div className="w-px bg-primary/20" />
+            <div className="w-px h-8 bg-primary/20" />
             <div className="text-center">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('dashboard.stats.month', { month: format(new Date(), 'MMM', { locale: i18n.language === 'pt' ? ptBR : undefined }) }) || `Mês (${format(new Date(), 'MMM', { locale: i18n.language === 'pt' ? ptBR : undefined })})`}</p>
-              <p className="text-xl font-black text-primary">{monthlyHours.toFixed(1)}h</p>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                {t('dashboard.stats.month', { month: format(new Date(), 'MMM', { locale: i18n.language === 'pt' ? ptBR : undefined }) }) || `Mês`}
+              </p>
+              <p className="text-lg font-black text-primary">{monthlyHours.toFixed(1)}h</p>
             </div>
           </div>
         </div>
@@ -256,32 +324,52 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title={t('dashboard.stats.sales')} value="R$ 4.250,00" icon={<TrendingUp className="text-primary" />} change={`+12.5% ${t('dashboard.stats.vsYesterday')}`} />
-        <StatCard title={t('dashboard.stats.orders')} value="42" icon={<UtensilsCrossed className="text-primary" />} change={`8 ${t('dashboard.stats.waiting')}`} />
-        <StatCard title={t('dashboard.stats.cmv')} value="28.4%" icon={<Zap className="text-primary" />} change="Ideal: <30%" />
-        <StatCard title={t('dashboard.stats.waste')} value={`${totalWasteToday.toFixed(1)} kg`} icon={<Trash2 className="text-primary" />} change={wasteStatus.message} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard 
+          title={t('dashboard.stats.sales')} 
+          value={formattedSales} 
+          icon={<TrendingUp className="w-5 h-5 text-primary" />} 
+          change={salesChangeText} 
+        />
+        <StatCard 
+          title={t('dashboard.stats.orders')} 
+          value={String(activeOrdersCount)} 
+          icon={<UtensilsCrossed className="w-5 h-5 text-primary" />} 
+          change={`${waitingOrdersCount} ${t('dashboard.stats.waiting')}`} 
+        />
+        <StatCard 
+          title={t('dashboard.stats.cmv')} 
+          value={cmvValue} 
+          icon={<Zap className="w-5 h-5 text-primary" />} 
+          change="Ideal: <30%" 
+        />
+        <StatCard 
+          title={t('dashboard.stats.waste')} 
+          value={`${totalWasteToday.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`} 
+          icon={<Trash2 className="w-5 h-5 text-primary" />} 
+          change={wasteStatus.message} 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <Card className="lg:col-span-2 shadow-md border-secondary/20 bg-secondary/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <Card className="lg:col-span-2 shadow-sm border-secondary/20 bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <ChefHat className="text-secondary w-5 h-5" />
                 {t('dashboard.production.title')}
               </CardTitle>
               <CardDescription>{t('dashboard.production.description')}</CardDescription>
             </div>
-            <Badge variant="secondary" className="font-bold">
+            <Badge variant="secondary" className="font-bold text-xs">
               {myTasks?.filter(t => t.completed).length || 0}/{myTasks?.length || 0}
             </Badge>
           </CardHeader>
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className="space-y-3 pt-4">
             {myTasks?.map(task => (
               <div 
                 key={task.id} 
-                className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${task.completed ? 'bg-secondary/10 border-secondary/20 opacity-70' : 'bg-background border-border shadow-sm hover:shadow-md'}`}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${task.completed ? 'bg-muted/40 border-border/50 opacity-75' : 'bg-background border-border shadow-2xs hover:border-primary/30'}`}
                 onClick={() => toggleTask(task.id, task.completed)}
               >
                 <Checkbox checked={task.completed} onCheckedChange={() => toggleTask(task.id, task.completed)} className="mt-1" />
@@ -289,46 +377,46 @@ export default function DashboardPage() {
                   <p className={`text-sm font-bold ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                     {task.taskName}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{task.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
                   {task.completedAt && (
-                    <span className="text-[8px] font-bold text-secondary uppercase mt-2 block">
+                    <span className="text-[10px] font-bold text-secondary uppercase mt-1.5 block">
                       {t('dashboard.production.completedAt', { time: format(new Date(task.completedAt), 'HH:mm') })}
                     </span>
                   )}
                 </div>
-                {!task.completed && <Badge variant="outline" className="text-[8px] animate-pulse">{t('checklists.pdf.table.pending')}</Badge>}
+                {!task.completed && <Badge variant="outline" className="text-[10px] animate-pulse">{t('checklists.pdf.table.pending')}</Badge>}
               </div>
             ))}
             {myTasks?.length === 0 && (
               <div className="text-center py-10 text-muted-foreground space-y-2">
-                <ListTodo className="w-12 h-12 mx-auto opacity-10" />
+                <ListTodo className="w-12 h-12 mx-auto opacity-20" />
                 <p className="text-xs italic">{t('dashboard.production.empty')}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1 shadow-md border-primary/20 bg-primary/5">
-          <CardHeader>
+        <Card className="lg:col-span-1 shadow-sm border border-primary/20 bg-card">
+          <CardHeader className="pb-3 border-b">
             <div className="flex items-center gap-2">
               <Clock className="text-primary w-5 h-5" />
-              <CardTitle className="text-lg">{t('dashboard.punchClock.title')}</CardTitle>
+              <CardTitle className="text-lg font-bold">{t('dashboard.punchClock.title')}</CardTitle>
             </div>
             <CardDescription>{t('dashboard.punchClock.description')}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">{t('dashboard.punchClock.in')}</Label>
+          <CardContent className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{t('dashboard.punchClock.in')}</Label>
                 <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="bg-background" />
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs">{t('dashboard.punchClock.out')}</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">{t('dashboard.punchClock.out')}</Label>
                 <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="bg-background" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">{t('dashboard.punchClock.break')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{t('dashboard.punchClock.break')}</Label>
               <Input type="number" value={breakMin} onChange={(e) => setBreakMin(e.target.value)} className="bg-background" />
             </div>
             <Button onClick={handleRegisterShift} disabled={isSubmitting} className="w-full font-bold gap-2">
@@ -337,15 +425,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1 shadow-md">
-          <CardHeader>
+        <Card className="lg:col-span-1 shadow-sm border bg-card">
+          <CardHeader className="pb-3 border-b">
             <div className="flex items-center gap-2">
               <ClipboardCheck className="text-primary w-5 h-5" />
-              <CardTitle className="text-lg">{t('dashboard.fixedChecklists.title')}</CardTitle>
+              <CardTitle className="text-lg font-bold">{t('dashboard.fixedChecklists.title')}</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <ChecklistGroup title={t('dashboard.fixedChecklists.groups.opening')} icon={<Sun className="w-4 h-4 text-orange-500" />} tasks={[t('dashboard.fixedChecklists.tasks.ac'), t('dashboard.fixedChecklists.tasks.tables'), t('dashboard.fixedChecklists.tasks.cashier')]} />
+          <CardContent className="space-y-6 pt-4">
+            <ChecklistGroup title={t('dashboard.fixedChecklists.groups.opening')} icon={<Sun className="w-4 h-4 text-amber-500" />} tasks={[t('dashboard.fixedChecklists.tasks.ac'), t('dashboard.fixedChecklists.tasks.tables'), t('dashboard.fixedChecklists.tasks.cashier')]} />
             <ChecklistGroup title={t('dashboard.fixedChecklists.groups.closing')} icon={<Moon className="w-4 h-4 text-indigo-500" />} tasks={[t('dashboard.fixedChecklists.tasks.closingCashier'), t('dashboard.fixedChecklists.tasks.cleaning'), t('dashboard.fixedChecklists.tasks.trash')]} />
           </CardContent>
         </Card>
@@ -356,14 +444,14 @@ export default function DashboardPage() {
 
 function StatCard({ title, value, icon, change }: { title: string; value: string; icon: React.ReactNode; change: string }) {
   return (
-    <Card className="border-none shadow-sm">
-      <CardContent className="pt-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="p-2 bg-primary/10 rounded-lg">{icon}</div>
-          <Badge variant="secondary" className="text-[10px] font-bold">{change}</Badge>
+    <Card className="border shadow-sm bg-card hover:shadow-md transition-shadow">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">{icon}</div>
+          <Badge variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 truncate max-w-[150px]">{change}</Badge>
         </div>
-        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-        <p className="text-2xl font-bold text-foreground font-headline">{value}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{title}</p>
+        <p className="text-2xl font-black text-foreground font-headline tracking-tight">{value}</p>
       </CardContent>
     </Card>
   )

@@ -175,30 +175,72 @@ export default function ProductionManagementPage() {
     toast({ variant: "destructive", title: t('inventory.toasts.removed') })
   }
 
+  const handleClearDemoTasks = () => {
+    if (!db || !allTasks || allTasks.length === 0) return
+    
+    allTasks.forEach(task => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'productionTasks', task.id))
+    })
+
+    toast({
+      title: t('production.clearDemoDialog.success'),
+      description: t('production.clearDemoDialog.successDesc')
+    })
+  }
+
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">{t('production.title')}</h1>
-          <p className="text-muted-foreground">{t('production.description')}</p>
+          <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">{t('production.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('production.description')}</p>
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <LanguageSwitcher />
+
+          {allTasks && allTasks.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  {t('production.clearDemo')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('production.clearDemoDialog.title')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('production.clearDemoDialog.description')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoTasks}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('common.confirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 font-bold shadow-sm">
                 <UserPlus className="w-4 h-4" /> {t('production.delegate')}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>{t('production.newDialog.title')}</DialogTitle>
                 <DialogDescription>{t('production.newDialog.description')}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label>{t('production.newDialog.responsible')}</Label>
+                  <Label className="text-xs font-semibold">{t('production.newDialog.responsible')}</Label>
                   <Select value={assignedUserId} onValueChange={setAssignedUserId}>
                     <SelectTrigger>
                       <SelectValue placeholder={isEmployeesLoading ? t('production.newDialog.loading') : t('production.newDialog.select')} />
@@ -214,44 +256,49 @@ export default function ProductionManagementPage() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label>{t('production.newDialog.taskName')}</Label>
+                  <Label className="text-xs font-semibold">{t('production.newDialog.taskName')}</Label>
                   <Input value={taskName} onChange={(e) => setTaskName(e.target.value)} placeholder={t('production.newDialog.placeholderName')} />
                 </div>
                 <div className="grid gap-2">
-                  <Label>{t('production.newDialog.taskDesc')}</Label>
+                  <Label className="text-xs font-semibold">{t('production.newDialog.taskDesc')}</Label>
                   <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('production.newDialog.placeholderDesc')} />
                 </div>
                 <div className="grid gap-2">
-                  <Label>{t('production.newDialog.date')}</Label>
+                  <Label className="text-xs font-semibold">{t('production.newDialog.date')}</Label>
                   <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>{t('common.cancel')}</Button>
-                <Button onClick={handleCreateTask}>{t('production.delegate')}</Button>
+                <Button onClick={handleCreateTask} className="font-bold">{t('production.delegate')}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <Card className="shadow-md">
-        <CardHeader className="bg-primary/5">
-          <div className="flex items-center gap-2">
-            <ListTodo className="w-5 h-5 text-primary" />
-            <CardTitle>{t('production.table.title')}</CardTitle>
+      <Card className="shadow-sm border">
+        <CardHeader className="bg-muted/30 border-b py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ListTodo className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg font-bold">{t('production.table.title')}</CardTitle>
+            </div>
+            <Badge variant="secondary" className="font-bold text-xs">
+              {allTasks?.filter(t => t.completed).length || 0} / {allTasks?.length || 0} {t('production.table.completed')}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left border-collapse">
               <thead>
-                <tr className="border-b bg-muted/20">
-                  <th className="p-4 font-bold">{t('production.table.date')}</th>
-                  <th className="p-4 font-bold">{t('production.table.employee')}</th>
-                  <th className="p-4 font-bold">{t('production.table.task')}</th>
-                  <th className="p-4 font-bold text-center">{t('production.table.status')}</th>
-                  <th className="p-4 font-bold text-right">{t('production.table.actions')}</th>
+                <tr className="border-b bg-muted/40 text-muted-foreground uppercase text-[11px] font-bold tracking-wider">
+                  <th className="p-4">{t('production.table.date')}</th>
+                  <th className="p-4">{t('production.table.employee')}</th>
+                  <th className="p-4">{t('production.table.task')}</th>
+                  <th className="p-4 text-center">{t('production.table.status')}</th>
+                  <th className="p-4 text-right">{t('production.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>

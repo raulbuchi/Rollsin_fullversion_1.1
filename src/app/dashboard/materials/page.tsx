@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +50,7 @@ interface MaterialItem {
 }
 
 export default function MaterialsPage() {
+  const { t } = useTranslation()
   const { user: localUser } = useAuth()
   const db = useFirestore()
   const { user } = useUser()
@@ -102,7 +104,7 @@ export default function MaterialsPage() {
       purchaseValue: ''
     })
     setIsAddDialogOpen(false)
-    toast({ title: "Sucesso", description: "Material adicionado ao inventário." })
+    toast({ title: t('inventory.toasts.success'), description: t('materials.clearDemoDialog.successDesc') })
   }
 
   const handleUpdateItem = () => {
@@ -121,14 +123,27 @@ export default function MaterialsPage() {
 
     setIsEditDialogOpen(false)
     setEditingItem(null)
-    toast({ title: "Sucesso", description: "Material atualizado com sucesso." })
+    toast({ title: t('inventory.toasts.success'), description: t('inventory.toasts.updated') })
   }
 
   const handleDeleteItem = (id: string) => {
     if (!db) return
     const docRef = doc(db, 'restaurants', restaurantId, 'materials', id)
     deleteDocumentNonBlocking(docRef)
-    toast({ variant: "destructive", title: "Removido", description: "O item foi removido do inventário." })
+    toast({ variant: "destructive", title: t('inventory.toasts.removed'), description: t('inventory.toasts.deleted') })
+  }
+
+  const handleClearDemoMaterials = () => {
+    if (!db || !materials || materials.length === 0) return
+    
+    materials.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'materials', item.id))
+    })
+
+    toast({
+      title: t('materials.clearDemoDialog.success'),
+      description: t('materials.clearDemoDialog.successDesc')
+    })
   }
 
   const filteredMaterials = (cat: string) => materials?.filter(item => 
@@ -138,61 +153,90 @@ export default function MaterialsPage() {
   ) || []
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Equipamentos & Materiais</h1>
-          <p className="text-muted-foreground">Gestão de ativos da cozinha e do salão.</p>
+          <h1 className="text-3xl font-bold font-headline text-primary tracking-tight">{t('materials.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('materials.description')}</p>
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Buscar material..." 
+              placeholder={t('inventory.search')} 
               className="pl-8" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          {materials && materials.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  {t('materials.clearDemo')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('materials.clearDemoDialog.title')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('materials.clearDemoDialog.description')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoMaterials}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('common.confirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" /> Novo Ativo
+              <Button className="gap-2 font-bold shadow-sm">
+                <Plus className="w-4 h-4" /> {t('materials.newAsset')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Cadastrar Novo Ativo</DialogTitle>
+                <DialogTitle>{t('materials.newAsset')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label>Nome do Item</Label>
+                  <Label className="text-xs font-semibold">Nome do Item</Label>
                   <Input value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})} placeholder="Ex: Forno Industrial, Prato Raso..." />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Categoria Principal</Label>
+                    <Label className="text-xs font-semibold">Categoria Principal</Label>
                     <Select value={newItem.category} onValueChange={(val: any) => setNewItem({...newItem, category: val})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Cozinha">Cozinha</SelectItem>
-                        <SelectItem value="Salão">Salão</SelectItem>
+                        <SelectItem value="Cozinha">{t('materials.tabs.kitchen')}</SelectItem>
+                        <SelectItem value="Salão">{t('materials.tabs.hall')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Sub-categoria</Label>
+                    <Label className="text-xs font-semibold">Sub-categoria</Label>
                     <Input value={newItem.subCategory} onChange={(e) => setNewItem({...newItem, subCategory: e.target.value})} placeholder="Maquinário, Louça, etc" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Quantidade</Label>
+                    <Label className="text-xs font-semibold">Quantidade</Label>
                     <Input type="number" value={newItem.quantity} onChange={(e) => setNewItem({...newItem, quantity: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Estado de Conservação</Label>
+                    <Label className="text-xs font-semibold">Estado de Conservação</Label>
                     <Select value={newItem.status} onValueChange={(val: any) => setNewItem({...newItem, status: val})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -206,18 +250,18 @@ export default function MaterialsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Data da Compra</Label>
+                    <Label className="text-xs font-semibold">Data da Compra</Label>
                     <Input type="date" value={newItem.purchaseDate} onChange={(e) => setNewItem({...newItem, purchaseDate: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Valor da Compra (R$)</Label>
+                    <Label className="text-xs font-semibold">Valor da Compra (R$)</Label>
                     <Input type="number" step="0.01" value={newItem.purchaseValue} onChange={(e) => setNewItem({...newItem, purchaseValue: e.target.value})} placeholder="0.00" />
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleAddItem}>Salvar no Inventário</Button>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>{t('common.cancel')}</Button>
+                <Button onClick={handleAddItem} className="font-bold">{t('common.confirm')}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -225,9 +269,9 @@ export default function MaterialsPage() {
       </div>
 
       <Tabs defaultValue="cozinha" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8">
-          <TabsTrigger value="cozinha" className="gap-2"><Drill className="w-4 h-4" /> Cozinha</TabsTrigger>
-          <TabsTrigger value="salao" className="gap-2"><Utensils className="w-4 h-4" /> Salão</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-6">
+          <TabsTrigger value="cozinha" className="gap-2 font-bold"><Drill className="w-4 h-4" /> {t('materials.tabs.kitchen')}</TabsTrigger>
+          <TabsTrigger value="salao" className="gap-2 font-bold"><Utensils className="w-4 h-4" /> {t('materials.tabs.hall')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cozinha">
@@ -325,63 +369,65 @@ export default function MaterialsPage() {
 }
 
 function MaterialTable({ data, onEdit, onDelete, isLoading }: { data: MaterialItem[], onEdit: (i: MaterialItem) => void, onDelete: (id: string) => void, isLoading: boolean }) {
+  const { t } = useTranslation()
+
   return (
-    <Card className="border-none shadow-md overflow-hidden">
+    <Card className="border shadow-sm overflow-hidden">
       <CardContent className="p-0">
         <Table>
-          <TableHeader className="bg-muted/30">
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Sub-categoria</TableHead>
-              <TableHead>Qtd</TableHead>
-              <TableHead>Compra</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+          <TableHeader className="bg-muted/40">
+            <TableRow className="border-b bg-muted/40 text-muted-foreground uppercase text-[11px] font-bold tracking-wider">
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.item')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.subCategory')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.qty')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.purchase')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.value')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold">{t('materials.table.status')}</TableHead>
+              <TableHead className="py-3.5 px-4 font-bold text-right">{t('materials.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map(item => (
               <TableRow key={item.id} className="hover:bg-muted/10 transition-colors">
-                <TableCell className="font-bold">{item.name}</TableCell>
+                <TableCell className="font-semibold text-sm">{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-xs uppercase font-medium">{item.subCategory}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
+                <TableCell className="font-semibold text-sm">{item.quantity}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CalendarDays className="w-3 h-3" />
+                    <CalendarDays className="w-3.5 h-3.5 text-muted-foreground/70" />
                     {item.purchaseDate ? format(parseISO(item.purchaseDate), 'dd/MM/yy', { locale: ptBR }) : '-'}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1 font-mono text-xs">
+                  <div className="flex items-center gap-1 font-mono text-xs font-medium">
                     <span className="text-muted-foreground">R$</span>
                     {item.purchaseValue ? item.purchaseValue.toFixed(2) : '0.00'}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={item.status === 'Substituir' ? 'destructive' : item.status === 'Manutenção' ? 'secondary' : 'default'} className="text-[10px]">
+                  <Badge variant={item.status === 'Substituir' ? 'destructive' : item.status === 'Manutenção' ? 'secondary' : 'default'} className="text-[10px] font-semibold px-2 py-0.5">
                     {item.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => onEdit(item)}>
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => onEdit(item)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir Ativo?</AlertDialogTitle>
-                          <AlertDialogDescription>Deseja remover este item do inventário de materiais permanentemente?</AlertDialogDescription>
+                          <AlertDialogTitle>{t('common.delete')}?</AlertDialogTitle>
+                          <AlertDialogDescription>{t('materials.clearDemoDialog.description')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Confirmar</AlertDialogAction>
+                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t('common.confirm')}</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -392,7 +438,7 @@ function MaterialTable({ data, onEdit, onDelete, isLoading }: { data: MaterialIt
             {!isLoading && data.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic">
-                  Nenhum material cadastrado nesta categoria.
+                  {t('materials.table.empty')}
                 </TableCell>
               </TableRow>
             )}

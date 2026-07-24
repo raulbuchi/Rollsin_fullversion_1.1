@@ -43,8 +43,20 @@ import {
   DialogDescription,
   DialogTrigger
 } from '@/components/ui/dialog'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
-import { collection, query, limit } from 'firebase/firestore'
+import { collection, query, limit, doc } from 'firebase/firestore'
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import jsPDF from 'jspdf'
@@ -93,6 +105,19 @@ interface UserProfile {
   restaurantId: string
 }
 
+interface OrderData {
+  id: string
+  totalAmount: number
+  orderDateTime: string
+}
+
+interface IngredientData {
+  id: string
+  name: string
+  quantity: number
+  cost: number
+}
+
 const COLORS = ['#2D855A', '#84DB84', '#15803d', '#4ade80', '#065f46']
 
 export default function ReportsPage() {
@@ -131,10 +156,22 @@ export default function ReportsPage() {
     return query(collection(db, 'users'), limit(100))
   }, [db])
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!db || !restaurantId) return null
+    return query(collection(db, 'restaurants', restaurantId, 'orders'), limit(500))
+  }, [db, restaurantId])
+
+  const ingredientsQuery = useMemoFirebase(() => {
+    if (!db || !restaurantId) return null
+    return query(collection(db, 'restaurants', restaurantId, 'ingredients'), limit(500))
+  }, [db, restaurantId])
+
   const { data: rawTasks } = useCollection<ProductionTask>(tasksQuery)
   const { data: rawWaste } = useCollection<WasteRecord>(wasteQuery)
   const { data: rawShifts } = useCollection<WorkShift>(shiftsQuery)
   const { data: rawUsers } = useCollection<UserProfile>(usersQuery)
+  const { data: rawOrders } = useCollection<OrderData>(ordersQuery)
+  const { data: rawIngredients } = useCollection<IngredientData>(ingredientsQuery)
 
   // Filtrar usuários do restaurante atual
   const restaurantUsers = useMemo(() => {
@@ -213,6 +250,127 @@ export default function ReportsPage() {
     })
     return Object.entries(types).map(([name, value]) => ({ name, value }))
   }, [rawWaste])
+
+  // Dynamic financial statistics
+  const totalRevenue = useMemo(() => {
+    if (!rawOrders || !Array.isArray(rawOrders)) return 0
+    return rawOrders.reduce((acc, order) => acc + (Number(order.totalAmount) || 0), 0)
+  }, [rawOrders])
+
+  const totalIngredientCost = useMemo(() => {
+    if (!rawIngredients || !Array.isArray(rawIngredients)) return 0
+    return rawIngredients.reduce((acc, ing) => acc + ((Number(ing.cost) || 0) * (Number(ing.quantity) || 0)), 0)
+  }, [rawIngredients])
+
+  const totalWasteCost = useMemo(() => {
+    if (!rawWaste || !Array.isArray(rawWaste)) return 0
+    // Estimating cost based on waste weight (e.g. average R$ 15/kg)
+    return rawWaste.reduce((acc, w) => acc + ((Number(w.weight) || 0) * 15), 0)
+  }, [rawWaste])
+
+  const estimatedCogs = useMemo(() => {
+    const totalCost = totalIngredientCost * 0.3 + totalWasteCost
+    if (totalRevenue === 0) return 0
+    return Math.min(100, (totalCost / totalRevenue) * 100)
+  }, [totalIngredientCost, totalWasteCost, totalRevenue])
+
+  const totalMargin = useMemo(() => {
+    const cogsAmount = totalRevenue * (estimatedCogs / 100)
+    return Math.max(0, totalRevenue - cogsAmount)
+  }, [totalRevenue, estimatedCogs])
+
+  // Weekly Revenue chart data mapping from real orders
+  const weeklyRevenueData = useMemo(() => {
+    const days = [
+      { name: 'Seg', revenue: 0, cost: 0 },
+      { name: 'Ter', revenue: 0, cost: 0 },
+      { name: 'Qua', revenue: 0, cost: 0 },
+      { name: 'Qui', revenue: 0, cost: 0 },
+      { name: 'Sex', revenue: 0, cost: 0 },
+      { name: 'Sáb', revenue: 0, cost: 0 },
+      { name: 'Dom', revenue: 0, cost: 0 },
+    ]
+
+    if (!rawOrders || !Array.isArray(rawOrders)) return days
+
+    rawOrders.forEach(order => {
+      if (!order.orderDateTime) return
+      try {
+        const date = new Date(order.orderDateTime)
+        // Map native getDay() where 0 is Sunday, 1 is Monday ... to Monday-first week
+        const dayIndex = (date.getDay() + 6) % 7
+        if (dayIndex >= 0 && dayIndex < 7) {
+          const val = Number(order.totalAmount) || 0
+          days[dayIndex].revenue += val
+          days[dayIndex].cost += val * 0.3 // Estimated COGS
+        }
+      } catch (e) {
+        console.error("Error parsing orderDateTime:", e)
+      }
+    })
+
+    return days
+  }, [rawOrders])
+
+  // Expense distribution dynamic calculations
+  const expenseDistributionData = useMemo(() => {
+    const cmv = totalIngredientCost * 0.3 + totalWasteCost
+    const operational = (rawShifts || []).reduce((acc, s) => acc + (Number(s.totalHours) || 0) * 20, 0)
+
+    if (cmv === 0 && operational === 0) {
+      return []
+    }
+
+    return [
+      { name: 'CMV Insumos', value: Math.round(cmv) },
+      { name: 'Operacional', value: Math.round(operational) },
+      { name: 'Marketing', value: Math.round(totalRevenue * 0.05) },
+      { name: 'Outros', value: Math.round(totalRevenue * 0.02) },
+    ]
+  }, [totalIngredientCost, totalWasteCost, rawShifts, totalRevenue])
+
+  // Waste Trend dynamic calculations
+  const wasteTrendData = useMemo(() => {
+    if (!rawWaste || !Array.isArray(rawWaste) || rawWaste.length === 0) return []
+
+    const groups: Record<string, number> = {}
+    rawWaste.forEach(w => {
+      if (!w.date) return
+      try {
+        const [year, month, day] = w.date.split('-').map(Number)
+        const dateStr = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`
+        groups[dateStr] = (groups[dateStr] || 0) + (Number(w.weight) || 0)
+      } catch (e) {
+        try {
+          const d = new Date(w.date)
+          const dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
+          groups[dateStr] = (groups[dateStr] || 0) + (Number(w.weight) || 0)
+        } catch (err) {
+          console.error(err)
+        }
+      }
+    })
+
+    return Object.entries(groups).map(([name, peso]) => ({
+      name,
+      peso: Number(peso.toFixed(2))
+    })).sort((a, b) => {
+      const [da, ma] = a.name.split('/').map(Number)
+      const [db, mb] = b.name.split('/').map(Number)
+      return ma !== mb ? ma - mb : da - db
+    }).slice(-7)
+  }, [rawWaste])
+
+  const handleClearDemoFinancial = () => {
+    if (!db || !rawOrders || rawOrders.length === 0) return
+    rawOrders.forEach(order => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'orders', order.id))
+    })
+    toast({
+      title: t('reports.clearDemoFinancialDialog.success'),
+      description: t('reports.clearDemoFinancialDialog.successDesc')
+    })
+  }
 
   const handleExportIndividualPDF = (employee: any, shifts: WorkShift[]) => {
     const doc = new jsPDF()
@@ -342,10 +500,55 @@ export default function ReportsPage() {
         </TabsList>
 
         <TabsContent value="financial" className="space-y-8">
+          {rawOrders && rawOrders.length > 0 && (
+            <div className="flex justify-end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                    <Trash2 className="w-4 h-4" />
+                    {t('reports.clearDemoFinancial')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('reports.clearDemoFinancialDialog.title')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('reports.clearDemoFinancialDialog.description')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleClearDemoFinancial}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {t('common.confirm')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard title={t('reports.financial.revenue')} value="R$ 42.150,00" trend="+8.2%" positive />
-            <SummaryCard title={t('reports.financial.cogs')} value="28.4%" trend="-1.5%" positive />
-            <SummaryCard title={t('reports.financial.margin')} value="R$ 18.200,00" trend="+4.1%" positive />
+            <SummaryCard 
+              title={t('reports.financial.revenue')} 
+              value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)} 
+              trend={totalRevenue > 0 ? "Ativo" : "Sem dados"} 
+              positive={totalRevenue > 0} 
+            />
+            <SummaryCard 
+              title={t('reports.financial.cogs')} 
+              value={`${estimatedCogs.toFixed(1)}%`} 
+              trend={totalRevenue > 0 ? "Ideal" : "Sem dados"} 
+              positive={estimatedCogs <= 35 && totalRevenue > 0} 
+            />
+            <SummaryCard 
+              title={t('reports.financial.margin')} 
+              value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalMargin)} 
+              trend={totalMargin > 0 ? "Positivo" : "Sem dados"} 
+              positive={totalMargin > 0} 
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -357,11 +560,11 @@ export default function ReportsPage() {
               <CardContent className="h-[300px]">
                 {isMounted && (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={MOCK_REVENUE_DATA}>
+                  <BarChart data={weeklyRevenueData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <RechartsTooltip />
+                    <RechartsTooltip formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))} />
                     <Bar dataKey="revenue" name={t('reports.financial.chartRevenue')} fill="#2D855A" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="cost" name={t('reports.financial.chartCost')} fill="#84DB84" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -376,24 +579,28 @@ export default function ReportsPage() {
                 <CardDescription>{t('reports.financial.expenseDistDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {isMounted && (
+                {isMounted && expenseDistributionData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={MOCK_EXPENSE_DATA}
+                      data={expenseDistributionData}
                       innerRadius={60}
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {MOCK_EXPENSE_DATA.map((_, index) => (
+                      {expenseDistributionData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip />
+                    <RechartsTooltip formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    Nenhum custo ou faturamento registrado ainda para calcular a distribuição.
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -637,9 +844,9 @@ export default function ReportsPage() {
                 <CardTitle className="text-lg">{t('reports.waste.trend')}</CardTitle>
               </CardHeader>
               <CardContent className="h-[300px]">
-                {isMounted && (
+                {isMounted && wasteTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={MOCK_WASTE_TREND}>
+                  <LineChart data={wasteTrendData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -647,6 +854,10 @@ export default function ReportsPage() {
                     <Line type="monotone" dataKey="peso" name="Peso (kg)" stroke="#2D855A" strokeWidth={3} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    Nenhum desperdício registrado nos últimos 30 dias para exibir tendências.
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -753,31 +964,3 @@ function CleaningMetric({ label, value, date }: { label: string, value: number, 
     </div>
   )
 }
-
-// MOCK DATA PARA GRÁFICOS
-const MOCK_REVENUE_DATA = [
-  { name: 'Seg', revenue: 4200, cost: 1200 },
-  { name: 'Ter', revenue: 3800, cost: 1100 },
-  { name: 'Qua', revenue: 8400, cost: 2400 },
-  { name: 'Qui', revenue: 6200, cost: 1800 },
-  { name: 'Sex', revenue: 9500, cost: 2800 },
-  { name: 'Sáb', revenue: 11000, cost: 3200 },
-  { name: 'Dom', revenue: 10500, cost: 3000 },
-]
-
-const MOCK_EXPENSE_DATA = [
-  { name: 'CMV Insumos', value: 12400 },
-  { name: 'Operacional', value: 4500 },
-  { name: 'Marketing', value: 1200 },
-  { name: 'Outros', value: 800 },
-]
-
-const MOCK_WASTE_TREND = [
-  { name: '01/05', peso: 1.2 },
-  { name: '05/05', peso: 2.4 },
-  { name: '10/05', peso: 1.8 },
-  { name: '15/05', peso: 3.1 },
-  { name: '20/05', peso: 1.5 },
-  { name: '25/05', peso: 0.8 },
-  { name: '30/05', peso: 1.1 },
-]

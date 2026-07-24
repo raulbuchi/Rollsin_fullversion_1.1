@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,6 +53,7 @@ import { useAuth, UserRole } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const { user: localUser } = useAuth()
   const db = useFirestore()
   const auth = useFirebaseAuth()
@@ -229,15 +231,97 @@ export default function SettingsPage() {
     })
   }
 
+  const handleClearDemoTables = () => {
+    if (!db || !tables || tables.length === 0) return
+    tables.forEach(table => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'tables', table.id))
+    })
+    toast({
+      title: t('settings.clearDemoTablesDialog.success'),
+      description: t('settings.clearDemoTablesDialog.successDesc')
+    })
+  }
+
+  const handleClearDemoEmployees = () => {
+    if (!db || !employees || employees.length === 0) return
+    employees.forEach(emp => {
+      deleteDocumentNonBlocking(doc(db, 'users', emp.id))
+    })
+    toast({
+      title: t('settings.clearDemoEmployeesDialog.success'),
+      description: t('settings.clearDemoEmployeesDialog.successDesc')
+    })
+  }
+
   return (
     <div className="space-y-12 pb-24">
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-primary/10 rounded-2xl">
-          <SettingsIcon className="text-primary w-8 h-8" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 rounded-2xl">
+            <SettingsIcon className="text-primary w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">Configurações Gerais</h1>
+            <p className="text-muted-foreground">Estrutura de mesas, canais de venda e gestão de equipe.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Configurações Gerais</h1>
-          <p className="text-muted-foreground">Estrutura de mesas, canais de venda e gestão de equipe.</p>
+
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {tables && tables.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  {t('settings.clearDemoTables')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('settings.clearDemoTablesDialog.title')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('settings.clearDemoTablesDialog.description')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoTables}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('common.confirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {employees && employees.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  {t('settings.clearDemoEmployees')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('settings.clearDemoEmployeesDialog.title')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('settings.clearDemoEmployeesDialog.description')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoEmployees}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('common.confirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
@@ -348,30 +432,58 @@ export default function SettingsPage() {
                 <TableIcon className="w-5 h-5 text-primary" />
                 <CardTitle className="text-lg">Salão & Mesas</CardTitle>
               </div>
-              <Dialog open={isTableDialogOpen} onOpenChange={setIsTableDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 bg-primary/20 text-primary">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cadastrar Mesa</DialogTitle>
-                    <DialogDescription>Define a identificação física no salão.</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label>Número/Nome</Label>
-                      <Input value={newTableName} onChange={(e) => setNewTableName(e.target.value)} placeholder="Ex: 01" />
+              <div className="flex items-center gap-1">
+                {tables && tables.length > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" title={t('settings.clearDemoTables')}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.clearDemoTablesDialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.clearDemoTablesDialog.description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleClearDemoTables}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('common.confirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <Dialog open={isTableDialogOpen} onOpenChange={setIsTableDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-primary/20 text-primary">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cadastrar Mesa</DialogTitle>
+                      <DialogDescription>Define a identificação física no salão.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label>Número/Nome</Label>
+                        <Input value={newTableName} onChange={(e) => setNewTableName(e.target.value)} placeholder="Ex: 01" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Capacidade</Label>
+                        <Input type="number" value={newTableCap} onChange={(e) => setNewTableCap(e.target.value)} />
+                      </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label>Capacidade</Label>
-                      <Input type="number" value={newTableCap} onChange={(e) => setNewTableCap(e.target.value)} />
-                    </div>
-                  </div>
-                  <DialogFooter><Button onClick={handleAddTable}>Salvar</Button></DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter><Button onClick={handleAddTable}>Salvar</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">
@@ -407,6 +519,11 @@ export default function SettingsPage() {
                 </div>
               </div>
             ))}
+            {(!tables || tables.length === 0) && (
+              <div className="text-center py-6 text-muted-foreground text-xs italic">
+                Nenhuma mesa cadastrada.
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -418,48 +535,76 @@ export default function SettingsPage() {
                 <ShieldCheck className="w-5 h-5 text-foreground/60" />
                 <CardTitle className="text-lg">Equipe & Acessos</CardTitle>
               </div>
-              <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 bg-muted/30">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Novo Funcionário</DialogTitle>
-                    <DialogDescription>
-                      O usuário será criado com a senha padrão <span className="font-bold text-primary">1234</span>.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Nome Completo</Label>
-                      <Input placeholder="Ex: João Silva" value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} />
+              <div className="flex items-center gap-1">
+                {employees && employees.length > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" title={t('settings.clearDemoEmployees')}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.clearDemoEmployeesDialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.clearDemoEmployeesDialog.description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleClearDemoEmployees}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('common.confirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 bg-muted/30">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Novo Funcionário</DialogTitle>
+                      <DialogDescription>
+                        O usuário será criado com a senha padrão <span className="font-bold text-primary">1234</span>.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Nome Completo</Label>
+                        <Input placeholder="Ex: João Silva" value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>E-mail de Login</Label>
+                        <Input placeholder="joao@rollsin.com.br" value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Nível de Acesso</Label>
+                        <Select value={newEmpRole} onValueChange={(val) => setNewEmpRole(val as UserRole)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Admin">Administrador</SelectItem>
+                            <SelectItem value="Chefe">Chef (Cozinha & Estoque)</SelectItem>
+                            <SelectItem value="Serviço">Serviço (Salão)</SelectItem>
+                            <SelectItem value="Caixa">Caixa</SelectItem>
+                            <SelectItem value="Barman">Barman</SelectItem>
+                            <SelectItem value="Apoio">Apoio</SelectItem>
+                            <SelectItem value="Horista">Horista (Extra)</SelectItem>
+                            <SelectItem value="Passe">Passe (Coordenação)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>E-mail de Login</Label>
-                      <Input placeholder="joao@rollsin.com.br" value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Nível de Acesso</Label>
-                      <Select value={newEmpRole} onValueChange={(val) => setNewEmpRole(val as UserRole)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Admin">Administrador</SelectItem>
-                          <SelectItem value="Chefe">Chef (Cozinha & Estoque)</SelectItem>
-                          <SelectItem value="Serviço">Serviço (Salão)</SelectItem>
-                          <SelectItem value="Caixa">Caixa</SelectItem>
-                          <SelectItem value="Barman">Barman</SelectItem>
-                          <SelectItem value="Apoio">Apoio</SelectItem>
-                          <SelectItem value="Horista">Horista (Extra)</SelectItem>
-                          <SelectItem value="Passe">Passe (Coordenação)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter><Button onClick={handleAddEmployee}>Cadastrar e Gerar Senha</Button></DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter><Button onClick={handleAddEmployee}>Cadastrar e Gerar Senha</Button></DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">

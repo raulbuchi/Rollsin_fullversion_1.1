@@ -1,35 +1,42 @@
-
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Trash2, 
-  Camera, 
   Scale, 
   AlertTriangle, 
   History, 
   CheckCircle2, 
-  XCircle,
-  CameraOff,
-  TrendingUp
+  TrendingUp,
+  Upload,
+  ImageIcon
 } from 'lucide-react';
-import { useAuth } from '@/lib/store';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, query, orderBy, limit, where, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import Image from 'next/image';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type WasteType = 'Vencido/Estragado' | 'Retorno da Mesa' | 'Produção Excessiva';
 
@@ -45,22 +52,19 @@ interface WasteRecord {
 }
 
 export default function FoodWastePage() {
-  const { user: localUser } = useAuth();
+  const { t } = useTranslation();
   const db = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const restaurantId = localUser?.restaurantId || 'gp-001';
+  const restaurantId = 'gp-001';
 
   const [activeTab, setActiveTab] = useState<WasteType>('Vencido/Estragado');
   const [description, setDescription] = useState('');
   const [weight, setWeight] = useState('');
   const [justification, setJustification] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const wasteQuery = useMemoFirebase(() => {
@@ -68,11 +72,11 @@ export default function FoodWastePage() {
     return query(
       collection(db, 'restaurants', restaurantId, 'wasteRecords'),
       orderBy('date', 'desc'),
-      limit(10)
+      limit(20)
     );
   }, [db, user]);
 
-  const { data: recentWaste, isLoading } = useCollection<WasteRecord>(wasteQuery);
+  const { data: recentWaste } = useCollection<WasteRecord>(wasteQuery);
 
   const thirtyDaysAgo = useMemo(() => {
     const d = new Date();
@@ -117,49 +121,30 @@ export default function FoodWastePage() {
     }));
   }, [chartDataRaw]);
 
-  useEffect(() => {
-    if (isCapturing) {
-      const getCameraPermission = async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-          setHasCameraPermission(true);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-          setHasCameraPermission(false);
-          toast({
-            variant: 'destructive',
-            title: 'Erro na Câmera',
-            description: 'Por favor, habilite as permissões de câmera no seu navegador.',
-          });
-        }
-      };
-      getCameraPermission();
-    } else {
-      // Stop camera stream when not capturing
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
-    }
-  }, [isCapturing, toast]);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const takePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        setPhoto(dataUrl);
-        setIsCapturing(false);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setPhoto(event.target.result as string);
       }
-    }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearDemoWaste = () => {
+    if (!db || !recentWaste || recentWaste.length === 0) return;
+    
+    recentWaste.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'wasteRecords', item.id));
+    });
+
+    toast({
+      title: t('waste.clearDemoDialog.success'),
+      description: t('waste.clearDemoDialog.successDesc'),
+    });
   };
 
   const handleSaveWaste = () => {
@@ -185,6 +170,7 @@ export default function FoodWastePage() {
     setWeight('');
     setJustification('');
     setPhoto(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -302,52 +288,44 @@ export default function FoodWastePage() {
 
                 <div className="space-y-4">
                   <Label>Registro Fotográfico</Label>
-                  <div className="relative aspect-video bg-muted rounded-xl overflow-hidden border-2 border-dashed flex flex-col items-center justify-center">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    ref={fileInputRef} 
+                    onChange={handleImageUpload} 
+                    className="hidden" 
+                  />
+                  <div className="relative aspect-video bg-muted rounded-xl overflow-hidden border-2 border-dashed flex flex-col items-center justify-center transition-colors hover:border-primary/50">
                     {photo ? (
                       <>
                         <Image src={photo} alt="Waste capture" fill className="object-cover" />
                         <Button 
                           variant="destructive" 
                           size="icon" 
-                          className="absolute top-2 right-2 h-8 w-8"
-                          onClick={() => setPhoto(null)}
+                          className="absolute top-2 right-2 h-8 w-8 shadow-sm"
+                          onClick={() => {
+                            setPhoto(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </>
-                    ) : isCapturing ? (
-                      <div className="w-full h-full relative">
-                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                          <Button onClick={takePhoto} className="rounded-full h-12 w-12 bg-primary">
-                            <Camera className="w-6 h-6" />
-                          </Button>
-                          <Button variant="secondary" onClick={() => setIsCapturing(false)} className="rounded-full h-12 w-12">
-                            <XCircle className="w-6 h-6" />
-                          </Button>
-                        </div>
-                      </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="p-4 bg-background rounded-full shadow-sm">
-                          <Camera className="w-8 h-8 text-muted-foreground" />
+                      <div 
+                        className="flex flex-col items-center gap-3 p-4 text-center cursor-pointer w-full h-full justify-center hover:bg-muted/60 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="p-3 bg-background rounded-full shadow-sm text-primary">
+                          <Upload className="w-6 h-6" />
                         </div>
-                        <Button variant="outline" onClick={() => setIsCapturing(true)} className="gap-2">
-                          Abrir Câmera
-                        </Button>
+                        <div>
+                          <p className="font-semibold text-sm">{t('waste.uploadPhoto')}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{t('waste.uploadSubtext')}</p>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <canvas ref={canvasRef} className="hidden" />
-                  
-                  {!hasCameraPermission && isCapturing && (
-                    <Alert variant="destructive">
-                      <AlertTitle>Acesso Negado</AlertTitle>
-                      <AlertDescription>
-                        Permita o acesso à câmera para tirar fotos dos registros de desperdício.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
               </div>
             </Tabs>
@@ -362,20 +340,47 @@ export default function FoodWastePage() {
         {/* Histórico Recente */}
         <div className="space-y-6">
           <Card className="shadow-md">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <History className="w-5 h-5 text-primary" />
                 Últimas Perdas
               </CardTitle>
+              {recentWaste && recentWaste.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 border-destructive/30">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t('waste.clearDemo')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('waste.clearDemoDialog.title')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('waste.clearDemoDialog.description')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearDemoWaste}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t('common.confirm')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-2">
               {recentWaste?.map(item => (
                 <div key={item.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg border text-xs">
                   <div className="w-12 h-12 relative rounded overflow-hidden shrink-0 bg-muted flex items-center justify-center">
                     {item.photoUrl ? (
                       <Image src={item.photoUrl} alt="Waste" fill className="object-cover" />
                     ) : (
-                      <CameraOff className="w-4 h-4 text-muted-foreground/30" />
+                      <ImageIcon className="w-4 h-4 text-muted-foreground/30" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -384,12 +389,12 @@ export default function FoodWastePage() {
                       <span className="text-[10px] text-muted-foreground">{format(new Date(item.date), 'dd/MM HH:mm')}</span>
                     </div>
                     <p className="font-bold truncate mt-1">{item.description || 'Sem descrição'}</p>
-                    {item.weight > 0 && <p className="text-primary font-mono font-bold">{item.weight} kg</p>}
+                    {item.weight && item.weight > 0 ? <p className="text-primary font-mono font-bold">{item.weight} kg</p> : null}
                     {item.justification && <p className="italic text-muted-foreground line-clamp-1">"{item.justification}"</p>}
                   </div>
                 </div>
               ))}
-              {recentWaste?.length === 0 && (
+              {(!recentWaste || recentWaste.length === 0) && (
                 <div className="text-center py-10 text-muted-foreground italic">
                   Nenhum registro recente.
                 </div>

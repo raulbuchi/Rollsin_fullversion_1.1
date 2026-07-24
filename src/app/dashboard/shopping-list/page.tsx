@@ -122,6 +122,17 @@ export default function ShoppingListPage() {
     toast({ variant: "destructive", title: "Removido", description: "O item foi removido da lista." })
   }
 
+  const handleClearDemoShoppingList = () => {
+    if (!db || !shoppingList || shoppingList.length === 0) return
+    shoppingList.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'shoppingListItems', item.id))
+    })
+    toast({
+      title: "Lista de Compras Limpa",
+      description: "Todos os itens de demonstração da lista de compras foram excluídos com sucesso."
+    })
+  }
+
   const handleInventorySelect = (invId: string) => {
     const selected = inventory?.find(i => i.id === invId)
     if (selected) {
@@ -158,7 +169,7 @@ export default function ShoppingListPage() {
           <p className="text-muted-foreground">Planeje suas compras e gere sugestões baseadas no estoque.</p>
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -168,6 +179,34 @@ export default function ShoppingListPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          {shoppingList && shoppingList.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  Apagar Dados Demo
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Apagar Dados da Versão Demo da Lista de Compras</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação irá remover permanentemente todos os itens da lista de compras. Deseja continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoShoppingList}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Confirmar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
 
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>

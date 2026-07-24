@@ -119,6 +119,19 @@ export default function UniformsPage() {
     toast({ variant: "destructive", title: "Removido", description: "O item foi removido do enxoval." })
   }
 
+  const handleClearDemoUniforms = () => {
+    if (!db || !uniforms || uniforms.length === 0) return
+    
+    uniforms.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'uniforms', item.id))
+    })
+
+    toast({
+      title: "Dados Demo de Uniformes Removidos",
+      description: "Todos os itens de demonstração de uniformes foram excluídos com sucesso."
+    })
+  }
+
   const filteredUniforms = uniforms?.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           item.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -134,7 +147,7 @@ export default function UniformsPage() {
           <p className="text-muted-foreground">Controle de enxoval e EPIs da Rolls-In.</p>
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -144,6 +157,35 @@ export default function UniformsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          {uniforms && uniforms.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="w-4 h-4" />
+                  Apagar Dados Demo
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Apagar Dados da Versão Demo (Uniformes)</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação irá remover permanentemente todos os itens de uniformes e enxoval cadastrados. Deseja continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleClearDemoUniforms}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Confirmar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">

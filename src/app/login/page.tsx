@@ -37,12 +37,6 @@ export default function LoginPage() {
     const cleanPass = password.trim()
     
     try {
-      // Auto-Demo Logic: If credentials match demo admin, use anonymous sign in
-      if (cleanEmail === 'admin@rollsin.com.br' && cleanPass === 'admin') {
-        await handleDemoLogin()
-        return
-      }
-
       // Real Login via Firebase Auth
       const { user: firebaseUser } = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass)
       const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
@@ -70,7 +64,7 @@ export default function LoginPage() {
       let message = "E-mail ou senha inválidos."
       
       if (error.code === 'auth/invalid-credential') {
-        message = "Credenciais inválidas. Verifique os dados ou use o Acesso Demo."
+        message = "Credenciais inválidas. Verifique os dados inseridos."
       } else if (error.code === 'auth/user-not-found') {
         message = "Usuário não encontrado."
       } else if (error.code === 'auth/wrong-password') {
@@ -83,37 +77,6 @@ export default function LoginPage() {
         variant: "destructive",
         title: "Erro de Autenticação",
         description: message
-      })
-    } finally {
-      setIsLoggingIn(false)
-    }
-  }
-
-  const handleDemoLogin = async () => {
-    setIsLoggingIn(true)
-    try {
-      const { user: firebaseUser } = await signInAnonymously(auth)
-      await setDoc(doc(db, 'users', firebaseUser.uid), {
-        id: firebaseUser.uid,
-        name: 'Administrador Demo',
-        email: 'admin@rollsin.com.br',
-        role: 'Admin',
-        restaurantId: 'gp-001'
-      }, { merge: true })
-      
-      login('Admin', firebaseUser.uid, 'gp-001', 'admin@rollsin.com.br')
-      router.push('/dashboard')
-      
-      toast({
-        title: "Acesso Demo",
-        description: "Bem-vindo ao Rolls-In (Modo Demonstração)."
-      })
-    } catch (e) {
-      console.error(e)
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível iniciar a sessão demo."
       })
     } finally {
       setIsLoggingIn(false)
@@ -174,24 +137,6 @@ export default function LoginPage() {
               {isLoggingIn ? "Autenticando..." : "Entrar no Sistema"}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground font-bold">ou</span>
-            </div>
-          </div>
-
-          <Button 
-            variant="outline" 
-            className="w-full h-11 border-secondary/50 text-secondary hover:bg-secondary/10 font-bold gap-2"
-            onClick={handleDemoLogin}
-            disabled={isLoggingIn}
-          >
-            <Sparkles className="w-4 h-4" /> Acesso Rápido (Demo)
-          </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4 text-center border-t pt-6 mt-2">
           <div className="space-y-1">

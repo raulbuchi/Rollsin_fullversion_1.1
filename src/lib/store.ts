@@ -25,13 +25,13 @@ export function useAuth() {
     setIsLoading(false)
   }, [])
 
-  const login = (role: UserRole, firebaseUid: string, restaurantId: string, email: string = 'user@rollsin.com.br') => {
+  const login = (role: UserRole, firebaseUid: string, email: string = 'user@rollsin.com.br') => {
     const newUser: User = {
       id: firebaseUid,
       name: email.split('@')[0],
       email: email,
       role: role,
-      restaurantId: restaurantId
+      restaurantId: 'gp-001'
     }
     setUser(newUser)
     localStorage.setItem('rms_user', JSON.stringify(newUser))

@@ -55,6 +55,13 @@
   "inventory": {
     "title": "Inventory Management",
     "description": "Supplies control and shopping list.",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Delete Demo Inventory Data",
+      "description": "This action will permanently delete all items from inventory. Do you want to proceed?",
+      "success": "Demo Data Deleted",
+      "successDesc": "All demo inventory items were deleted successfully."
+    },
     "tabs": {
       "inventory": "Inventory",
       "shoppingList": "Shopping List"
@@ -129,10 +136,86 @@
       "deleted": "The item was deleted from inventory."
     }
   },
+  "materials": {
+    "title": "Equipment & Materials",
+    "description": "Kitchen and dining hall asset management.",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Delete Demo Version Data (Equipment & Materials)",
+      "description": "This action will permanently delete all materials and equipment from both Kitchen and Hall tables. Do you want to proceed?",
+      "success": "Demo Data Deleted",
+      "successDesc": "All demo materials from Kitchen and Hall tables were deleted successfully."
+    },
+    "newAsset": "New Asset",
+    "tabs": {
+      "kitchen": "Kitchen",
+      "hall": "Dining Hall"
+    },
+    "table": {
+      "item": "Item",
+      "subCategory": "Sub-category",
+      "qty": "Qty",
+      "purchase": "Purchase",
+      "value": "Value",
+      "status": "Status",
+      "actions": "Actions",
+      "empty": "No materials registered in this category."
+    }
+  },
+  "uniforms": {
+    "title": "Uniform Management",
+    "description": "Apparel and PPE inventory management.",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Delete Demo Uniform Data",
+      "description": "This action will permanently delete all demo uniform and apparel items. Do you want to proceed?",
+      "success": "Demo Uniform Data Deleted",
+      "successDesc": "All demo uniform items were deleted successfully."
+    },
+    "newItem": "New Item"
+  },
+  "recipes": {
+    "title": "Technical Sheets & Pricing",
+    "description": "Calculate actual COGS, photograph dishes, and set AI pricing.",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Delete Demo Technical Sheets Data",
+      "description": "This action will permanently delete all demo technical sheets. Do you want to proceed?",
+      "success": "Demo Technical Sheets Deleted",
+      "successDesc": "All demo technical sheets were deleted successfully."
+    },
+    "newRecipe": "New Sheet",
+    "chooseFromGallery": "Choose Image from Gallery",
+    "uploadPhoto": "Upload Photo from Gallery",
+    "uploadPhotoDesc": "Select a photo of the finished dish from your gallery."
+  },
+  "settings": {
+    "clearDemoTables": "Delete Demo Tables",
+    "clearDemoTablesDialog": {
+      "title": "Delete Demo Tables Data",
+      "description": "This action will permanently delete all demo tables. Do you want to proceed?",
+      "success": "Demo Tables Removed",
+      "successDesc": "All demo tables were deleted successfully."
+    },
+    "clearDemoEmployees": "Delete Demo Employees",
+    "clearDemoEmployeesDialog": {
+      "title": "Delete Demo Employees Data",
+      "description": "This action will permanently delete all demo employees. Do you want to proceed?",
+      "success": "Demo Employees Removed",
+      "successDesc": "All demo employees were deleted successfully."
+    }
+  },
   "shoppingList": {
     "search": "Search list...",
     "smartSuggestion": "Smart Suggestion",
     "newItem": "New Item",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Clear Demo Shopping List Data",
+      "description": "This action will permanently delete all items from your shopping list. Do you want to proceed?",
+      "success": "Shopping List Cleared",
+      "successDesc": "All demo shopping list items were deleted successfully."
+    },
     "dialogs": {
       "add": {
         "title": "Add to Shopping List",
@@ -170,293 +253,314 @@
     }
   },
   "dashboard": {
-    "title": "Rolls-In Dashboard",
-    "welcome": "Hello, {{name}}. Manage your operation with excellence.",
+    "title": "Control Panel",
+    "welcome": "Welcome back, {{name}}!",
     "stats": {
-      "sales": "Sales Today",
-      "orders": "Orders",
+      "today": "Today",
+      "month": "Month ({{month}})",
+      "wasteHealth": "Waste Health",
+      "sales": "Today's Sales",
+      "vsYesterday": "vs yesterday",
+      "orders": "Active Orders",
       "waiting": "waiting",
-      "cmv": "Average COGS",
+      "cmv": "Estimated COGS",
       "waste": "Waste Today",
-      "vsYesterday": "vs yesterday"
+      "wasteHealthy": "Waste volume within expected range."
+    },
+    "production": {
+      "title": "Production Tasks",
+      "description": "Your assigned task list for today",
+      "completedAt": "Completed at {{time}}",
+      "empty": "No pending production tasks for today."
+    },
+    "punchClock": {
+      "title": "Time Clock",
+      "description": "Register your work shift",
+      "in": "In",
+      "out": "Out",
+      "break": "Break (min)",
+      "registering": "Registering...",
+      "register": "Clock In"
+    },
+    "fixedChecklists": {
+      "title": "Daily Checklists",
+      "groups": {
+        "opening": "Shift Opening",
+        "closing": "Shift Closing"
+      },
+      "tasks": {
+        "ac": "Turn on AC and lighting",
+        "tables": "Check and sanitize tables",
+        "cashier": "Open restaurant register",
+        "closingCashier": "Reconcile and close register",
+        "cleaning": "Sanitize kitchen and dining room",
+        "trash": "Take out trash and organize stock"
+      }
     },
     "alerts": {
       "expiration": {
-        "title": "Attention! Supplies near expiration",
-        "expired": "Expired {{days}} days ago",
-        "today": "Expires today",
-        "inDays": "Expires in {{days}} days"
-      }
-    },
-    "production": {
-      "title": "Today's Production",
-      "description": "Your direct tasks for today's shift.",
-      "empty": "No production tasks assigned to you today.",
-      "completedAt": "Completed at {{time}}"
-    },
-    "punchClock": {
-      "title": "Punch Clock",
-      "description": "Record your journey today.",
-      "in": "In",
-      "out": "Out",
-      "break": "Break (minutes)",
-      "register": "Register Shift",
-      "registering": "Registering..."
-    },
-    "fixedChecklists": {
-      "title": "Fixed Checklists",
-      "groups": {
-        "opening": "Opening",
-        "closing": "Closing"
-      },
-      "tasks": {
-        "ac": "AC & Sound",
-        "tables": "Tables",
-        "cashier": "Cashier",
-        "closingCashier": "Close Cashier",
-        "cleaning": "Cleaning",
-        "trash": "Trash"
-      }
-    }
-  },
-  "checklists": {
-    "title": "Operation Checklists",
-    "description": "Ensure excellence and consistency in your restaurant's processes.",
-    "pdfReport": "PDF Report",
-    "create": "Create Checklist",
-    "newDialog": {
-      "title": "New Operational Checklist",
-      "description": "Create a new task category for your team.",
-      "fieldTitle": "Checklist Title",
-      "fieldDesc": "Description / Goal",
-      "placeholderTitle": "Ex: Weekly Cleaning",
-      "placeholderDesc": "Describe the purpose of this process..."
-    },
-    "taskDialog": {
-      "title": "Add Topic to Checklist",
-      "description": "Insert a new task to be executed in this checklist.",
-      "fieldLabel": "Task / Topic Name",
-      "fieldDate": "Scheduled Date (Optional)",
-      "fieldTime": "Scheduled Time (Optional)",
-      "placeholderLabel": "Ex: Check fridge stock"
-    },
-    "deleteDialog": {
-      "title": "Delete Checklist?",
-      "description": "This action will permanently delete the checklist \"{{title}}\" and all its topics."
-    },
-    "deleteTaskDialog": {
-      "title": "Delete Topic?",
-      "description": "Are you sure you want to delete the task \"{{label}}\" from this checklist?"
-    },
-    "progress": "{{percent}}% completed",
-    "realExecution": "Real execution:",
-    "scheduled": "Date: {{date}} Time: {{time}}",
-    "executed": "Executed: {{at}}",
-    "empty": "This checklist has no topics yet.",
-    "addFirst": "Add first topic now",
-    "pdf": {
-      "title": "ROLLS-IN | COMPLIANCE REPORT",
-      "checklist": "Checklist: {{title}}",
-      "date": "Date: {{date}}",
-      "compliance": "Compliance Rate: {{progress}}%",
-      "table": {
-        "task": "Task",
-        "status": "Status",
-        "scheduled": "Scheduled",
-        "executed": "Executed",
-        "completed": "COMPLETED",
-        "pending": "PENDING"
-      },
-      "signature": "Shift Supervisor's Signature"
-    },
-    "defaultGroups": {
-      "opening": {
-        "title": "Room Opening",
-        "desc": "Essential tasks before the first customer arrives.",
-        "tasks": {
-          "ac": "Turn on AC and ambient sound",
-          "cleaning": "Check table and chair cleanliness",
-          "menus": "Check physical and digital menus",
-          "beverages": "Set up beverage station (coffee, water, ice)",
-          "bathrooms": "Check bathrooms (paper, soap, cleaning)",
-          "cashier": "Open cashier with confirmed change"
-        }
-      },
-      "kitchen": {
-        "title": "Mise en Place (Kitchen)",
-        "desc": "Basic ingredient preparation for the shift.",
-        "tasks": {
-          "wash": "Sanitizing produce",
-          "portions": "Protein portioning",
-          "sauces": "Preparation of base sauces and broths",
-          "expiration": "Check expiration of all pre-preparations",
-          "knives": "Knife sharpening and counter cleaning",
-          "fridges": "Check refrigerator temperature"
-        }
-      },
-      "weekly": {
-        "title": "Weekly Cleaning",
-        "desc": "Deep maintenance and scheduled heavy cleaning.",
-        "tasks": {
-          "fridges": "Deep cleaning and defrosting of refrigerators",
-          "uniforms": "Washing and sanitizing team uniforms",
-          "filters": "Clean exhaust hoods and change filters",
-          "grease": "Cleaning grease traps",
-          "windows": "Cleaning windows, facades and lighting fixtures",
-          "stock": "Organizing and sweeping dry stock"
-        }
-      },
-      "outsourced": {
-        "title": "Outsourced Control",
-        "desc": "Monitoring of maintenance and external cleaning services.",
-        "tasks": {
-          "pest": "Pest Control (Certified)",
-          "ducts": "Technical Cleaning of Exhausts and Ducts",
-          "water": "Water Tank Sanitization",
-          "ac": "Air Conditioning Maintenance (PMOC)",
-          "waste": "Special Waste / Used Oil Collection",
-          "facade": "High-rise Window / Facade Cleaning",
-          "uniforms": "Washing and Sanitizing Uniforms (External Service)"
-        }
-      },
-      "closing": {
-        "title": "Closing",
-        "desc": "Safety and post-service cleaning procedures.",
-        "tasks": {
-          "cashier": "Cashier closing and withdrawal",
-          "cleaning": "Cleaning griddles, ovens and stoves",
-          "trash": "Taking out trash and sanitizing bins",
-          "gas": "Check if gas and equipment are turned off",
-          "alarm": "Lock all doors and activate alarm"
-        }
+        "title": "Supply Expiration Alert",
+        "expired": "Expired {{days}}d ago",
+        "today": "Expires Today",
+        "inDays": "Expires in {{days}}d"
       }
     }
   },
   "production": {
     "title": "Production Management",
-    "description": "Assign direct tasks and track your team's progress.",
+    "description": "Delegate and track daily kitchen and floor tasks status.",
     "delegate": "Delegate Task",
+    "clearDemo": "Delete Demo Data",
+    "clearDemoDialog": {
+      "title": "Clear Demo Version Data",
+      "description": "This action will permanently delete all production tasks. Do you want to proceed?",
+      "success": "Demo Data Cleared",
+      "successDesc": "All demo production tasks were deleted successfully."
+    },
     "newDialog": {
-      "title": "New Production Task",
-      "description": "The task will appear on the chosen employee's checklist.",
-      "responsible": "Responsible Employee",
+      "title": "Delegate New Task",
+      "description": "Assign a production task to a specific employee.",
+      "responsible": "Responsible",
+      "select": "Select an employee...",
+      "loading": "Loading staff...",
+      "none": "No employee found",
       "taskName": "Task Name",
-      "taskDesc": "Description / Instructions",
+      "placeholderName": "E.g. Tomato Sauce Production (10L)",
+      "taskDesc": "Instructions / Notes",
+      "placeholderDesc": "E.g. Use new batch of tomatoes and label date",
       "date": "Execution Date",
-      "loading": "Loading team...",
-      "select": "Select...",
-      "none": "No employees found",
-      "placeholderName": "Ex: Portion 20kg of steak",
-      "placeholderDesc": "Specific details...",
-      "success": "Task Assigned",
-      "successDesc": "Task sent to {{name}}."
+      "success": "Task Delegated",
+      "successDesc": "Task assigned successfully to {{name}}."
     },
     "editDialog": {
-      "title": "Edit and Reassign Task",
-      "description": "Adjust task details or move it to another employee/date.",
+      "title": "Edit Task",
+      "description": "Change details of the selected task.",
       "success": "Task Updated",
-      "successDesc": "The changes have been saved."
+      "successDesc": "Changes saved successfully."
     },
     "deleteDialog": {
-      "title": "Delete Task?",
+      "title": "Delete Task",
       "description": "Are you sure you want to delete the task \"{{name}}\"? This action cannot be undone."
     },
     "table": {
-      "title": "Task Control Panel",
+      "title": "General Production Overview",
       "date": "Date",
-      "employee": "Employee",
+      "employee": "Responsible",
       "task": "Task",
       "status": "Status",
       "actions": "Actions",
-      "loading": "Loading tasks...",
-      "empty": "No tasks assigned yet. Start by delegating a task using the button above.",
       "completed": "Completed",
-      "pending": "Pending"
+      "pending": "Pending",
+      "empty": "No production tasks recorded so far.",
+      "loading": "Loading production tasks..."
     }
   },
   "reports": {
-    "title": "Operational Intelligence",
-    "description": "Performance, cost and compliance analysis.",
+    "title": "Reports & Analytics",
+    "description": "Operational, financial and team data analysis.",
     "print": "Print",
     "export": "Export PDF",
+    "clearDemoFinancial": "Delete Demo Revenue",
+    "clearDemoFinancialDialog": {
+      "title": "Delete Demo Revenue and Margin Data",
+      "description": "This action will permanently delete all demo orders and revenue data. Do you want to proceed?",
+      "success": "Revenue Demo Data Removed",
+      "successDesc": "All demo revenue and gross margin data were deleted successfully."
+    },
+    "table": {
+      "date": "Date"
+    },
     "tabs": {
       "financial": "Financial",
       "productivity": "Productivity",
       "hoursBank": "Hours Bank",
-      "waste": "Food Waste",
-      "cleaning": "Cleaning & Hygiene"
+      "waste": "Waste",
+      "cleaning": "Sanitization"
     },
     "financial": {
-      "revenue": "Gross Revenue",
+      "revenue": "Total Revenue",
       "cogs": "Estimated COGS",
-      "margin": "Contribution Margin",
-      "weeklyFlow": "Weekly Sales Flow",
-      "weeklyFlowDesc": "Comparison between revenue and direct costs.",
+      "margin": "Gross Margin",
+      "weeklyFlow": "Weekly Flow (Revenue x Cost)",
+      "weeklyFlowDesc": "Daily tracking of weekly entries and COGS",
+      "chartRevenue": "Revenue",
+      "chartCost": "Cost",
       "expenseDist": "Expense Distribution",
-      "expenseDistDesc": "Where your capital is being applied.",
-      "chartRevenue": "Sales ($)",
-      "chartCost": "Cost ($)"
+      "expenseDistDesc": "Detailed operational expenses"
     },
     "productivity": {
-      "efficiency": "Production Efficiency",
+      "efficiency": "Overall Efficiency",
       "totalTasks": "Total Tasks",
       "hoursRegistered": "Registered Hours",
-      "employees": "Collaborators",
-      "ranking": "Team Compliance Ranking",
-      "rankingDesc": "Based on completion of tasks assigned in Production Management.",
-      "empty": "No productivity data available yet.",
-      "tasksCompleted": "{{count}} tasks completed"
+      "employees": "Employees",
+      "ranking": "Productivity Ranking",
+      "rankingDesc": "Team performance by volume of completed tasks",
+      "tasksCompleted": "{{count}} tasks completed",
+      "empty": "No productivity data available."
     },
     "hoursBank": {
-      "totalHours": "Total Hours (Overall)",
+      "totalHours": "Accumulated Hours",
+      "refMonth": "Current Month",
       "average": "Average per Employee",
+      "ideal": "Ideal",
       "active": "Active Employees",
-      "refMonth": "Ref. Month",
-      "ideal": "Ideal: 160h",
-      "totalRef": "Total: 12",
-      "tableTitle": "Hours Bank Statement",
-      "tableDesc": "Summary of accumulated hours per collaborator.",
+      "totalRef": "Total",
+      "tableTitle": "Team Time Mirror",
+      "tableDesc": "Shift history and hours worked per employee",
       "thEmployee": "Employee",
-      "thShifts": "Shifts Performed",
+      "thShifts": "Shifts",
       "thAccumulated": "Accumulated Hours",
       "thStatus": "Status",
       "thActions": "Actions",
       "dialog": {
-        "title": "Hours Bank Statement",
-        "description": "Detailed shift history for {{name}}",
+        "title": "Employee Statement",
+        "description": "Hours detail for {{name}}",
         "totalHours": "Total Hours",
         "totalShifts": "Total Shifts",
-        "averagePerShift": "Average per Shift",
-        "exportIndividual": "Export Individual Statement"
+        "averagePerShift": "Average / Shift",
+        "exportIndividual": "Export Employee PDF"
       }
     },
     "waste": {
-      "totalWeight": "Total Weight Wasted",
-      "estimatedCost": "Estimated Loss Cost",
+      "totalWeight": "Total Wasted Weight",
+      "estimatedCost": "Estimated Cost",
       "reductionGoal": "Reduction Goal",
       "categoryDist": "Waste by Category",
-      "categoryDistDesc": "Distribution of loss volume.",
-      "trend": "Waste Trend (30 days)"
+      "categoryDistDesc": "Distribution of waste reasons",
+      "trend": "Waste Trend (kg)"
     },
     "cleaning": {
-      "sanitary": "Sanitary Compliance (Weekly)",
-      "sanitaryDesc": "Execution of deep cleaning checklists.",
-      "linen": "Linen Sanitization",
-      "linenDesc": "Laundry and uniform control.",
-      "totalCleaned": "Total Sanitized",
+      "sanitary": "Sanitary Cleaning",
+      "sanitaryDesc": "Water tank and reservoir cleaning log",
+      "linen": "Linen Control",
+      "linenDesc": "Laundry status and towel/rag replacement",
+      "totalCleaned": "Sanitizations On Time",
       "last7Days": "Last 7 days",
       "linenStatus": "Linen Status",
-      "inUse": "In use",
-      "inLaundry": "In laundry",
-      "replacement": "Replacement needed"
+      "inUse": "In Use",
+      "inLaundry": "In Laundry",
+      "replacement": "Replacement"
     },
     "pdf": {
-      "title": "ROLLS-IN | EXECUTIVE REPORT",
-      "individualTitle": "ROLLS-IN | INDIVIDUAL STATEMENT",
-      "issuedAt": "Issued at: {{at}}",
+      "title": "Operational Report",
       "type": "Type: {{type}}",
-      "employee": "Collaborator: {{name}}",
-      "totalAccumulated": "Total Accumulated Hours: {{hours}}h"
+      "issuedAt": "Issued at: {{at}}",
+      "individualTitle": "Individual Hours Report",
+      "employee": "Employee: {{name}}",
+      "totalAccumulated": "Total Accumulated: {{hours}}h"
+    }
+  },
+  "checklists": {
+    "title": "Checklist Management",
+    "description": "Monitor and execute checklists for operational routines and food safety.",
+    "pdfReport": "PDF Report",
+    "create": "Create Checklist",
+    "progress": "{{percent}}% completed",
+    "empty": "No tasks in this list.",
+    "addFirst": "Add first task",
+    "scheduled": "Scheduled: {{date}} at {{time}}",
+    "realExecution": "Real Execution:",
+    "executed": "Executed at {{at}}",
+    "newDialog": {
+      "title": "New Checklist Group",
+      "description": "Create a new checklist for your team.",
+      "fieldTitle": "List Title",
+      "placeholderTitle": "Ex: Fire Extinguisher Inspection",
+      "fieldDesc": "Description / Instructions",
+      "placeholderDesc": "Ex: Periodic safety check"
+    },
+    "taskDialog": {
+      "title": "New Task",
+      "description": "Add a new task to this list.",
+      "fieldLabel": "Task Description",
+      "placeholderLabel": "Ex: Check freezer temperature",
+      "fieldDate": "Scheduled Date",
+      "fieldTime": "Scheduled Time"
+    },
+    "deleteDialog": {
+      "title": "Delete Checklist",
+      "description": "Are you sure you want to delete checklist \"{{title}}\"?"
+    },
+    "deleteTaskDialog": {
+      "title": "Delete Task",
+      "description": "Are you sure you want to delete task \"{{label}}\"?"
+    },
+    "defaultGroups": {
+      "opening": {
+        "title": "Shift Opening",
+        "desc": "Initial routine before opening.",
+        "tasks": {
+          "ac": "Turn on AC and lighting",
+          "cleaning": "Check overall dining room cleanliness",
+          "menus": "Organize menus and condiment sets",
+          "beverages": "Restock beverage fridges",
+          "bathrooms": "Inspect restrooms and supplies",
+          "cashier": "Open restaurant POS / cashier"
+        }
+      },
+      "kitchen": {
+        "title": "Kitchen Routine",
+        "desc": "Hygiene, ingredients, and prep.",
+        "tasks": {
+          "wash": "Sanitize cutting boards and counters",
+          "portions": "Check meat and fish portioning",
+          "sauces": "Check sauce temperatures and expiration",
+          "expiration": "Verify FIFO expiration labels",
+          "knives": "Sharpen and sanitize chef knives",
+          "fridges": "Log refrigerator temperatures"
+        }
+      },
+      "weekly": {
+        "title": "Weekly Cleaning",
+        "desc": "Deep cleaning and organization.",
+        "tasks": {
+          "fridges": "Deep clean refrigerator interiors",
+          "uniforms": "Wash dish towels and aprons",
+          "filters": "Clean exhaust hood filters",
+          "grease": "Clean and empty grease trap",
+          "windows": "Wash windows and glass",
+          "stock": "Organize dry storage"
+        }
+      },
+      "outsourced": {
+        "title": "Outsourced Services",
+        "desc": "Tracking external vendors.",
+        "tasks": {
+          "pest": "Pest control inspection",
+          "ducts": "Exhaust duct cleaning",
+          "water": "Water tank sanitization",
+          "ac": "AC preventive maintenance",
+          "waste": "Used cooking oil disposal",
+          "facade": "Wash facade and signage",
+          "uniforms": "Industrial laundry pickup/delivery"
+        }
+      },
+      "closing": {
+        "title": "Shift Closing",
+        "desc": "Safety and cleanup at closing.",
+        "tasks": {
+          "cashier": "Cashier closing and reconciliation",
+          "cleaning": "Sanitize and mop kitchen floor",
+          "trash": "Take out all restaurant trash",
+          "gas": "Shut off gas and heating equipment",
+          "alarm": "Set alarm and lock all doors"
+        }
+      }
+    },
+    "pdf": {
+      "title": "Operational Checklist Report",
+      "checklist": "Checklist: {{title}}",
+      "date": "Date: {{date}}",
+      "compliance": "Compliance: {{progress}}%",
+      "signature": "Manager / Supervisor Signature",
+      "table": {
+        "task": "Task / Item",
+        "status": "Status",
+        "scheduled": "Scheduled",
+        "executed": "Executed",
+        "completed": "Completed",
+        "pending": "Pending"
+      }
     }
   },
   "common": {

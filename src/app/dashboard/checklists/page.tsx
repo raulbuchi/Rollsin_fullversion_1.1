@@ -265,6 +265,15 @@ export default function ChecklistsPage() {
     }))
   }
 
+  const getTranslatedText = (text: string) => {
+    if (!text) return ''
+    if (typeof text === 'string' && text.startsWith('checklists.')) {
+      const val = t(text)
+      return val !== text ? val : text
+    }
+    return text
+  }
+
   const calculateProgress = (tasks: ChecklistTask[]) => {
     if (tasks.length === 0) return 0
     const completed = tasks.filter(t => t.completed).length
@@ -286,14 +295,14 @@ export default function ChecklistsPage() {
     
     doc.setFontSize(12)
     doc.setTextColor(100)
-    doc.text(t('checklists.pdf.checklist', { title: activeGroup.title }), 14, 32)
+    doc.text(t('checklists.pdf.checklist', { title: getTranslatedText(activeGroup.title) }), 14, 32)
     doc.text(t('checklists.pdf.date', { date: today }), 14, 38)
     doc.text(t('checklists.pdf.compliance', { progress }), 14, 44)
 
     const tableData = activeGroup.tasks.map(task => {
       const executeDateDisplay = task.completedDate ? format(new Date(`${task.completedDate}T12:00:00`), 'dd/MM/yyyy') : '';
       return [
-        task.label,
+        getTranslatedText(task.label),
         task.completed ? t('checklists.pdf.table.completed') : t('checklists.pdf.table.pending'),
         [
           task.scheduledDate ? format(new Date(`${task.scheduledDate}T12:00:00`), 'dd/MM/yyyy') : '',
@@ -321,7 +330,7 @@ export default function ChecklistsPage() {
     doc.text('________________________________________________', 14, finalY)
     doc.text(t('checklists.pdf.signature'), 14, finalY + 5)
     
-    doc.save(`checklist-${activeGroup.title.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+    doc.save(`checklist-${getTranslatedText(activeGroup.title).toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
   }
 
   return (
@@ -385,7 +394,7 @@ export default function ChecklistsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-2">
                   {group.icon}
-                  <h3 className="font-bold text-[10px] uppercase truncate">{group.title}</h3>
+                  <h3 className="font-bold text-[10px] uppercase truncate">{getTranslatedText(group.title)}</h3>
                 </div>
                 <div className="flex justify-between items-end mb-1">
                   <span className="text-[10px] text-muted-foreground">{t('checklists.progress', { percent: progress })}</span>
@@ -402,7 +411,7 @@ export default function ChecklistsPage() {
         <TabsList className="flex w-full overflow-x-auto justify-start mb-8 bg-muted/30 p-1 rounded-xl scrollbar-hide">
           {groups.map(group => (
             <TabsTrigger key={group.id} value={group.id} className="min-w-[120px]">
-              {group.title}
+              {getTranslatedText(group.title)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -416,8 +425,8 @@ export default function ChecklistsPage() {
                     {group.icon}
                   </div>
                   <div className="overflow-hidden">
-                    <CardTitle className="truncate">{group.title}</CardTitle>
-                    <CardDescription className="truncate">{group.description}</CardDescription>
+                    <CardTitle className="truncate">{getTranslatedText(group.title)}</CardTitle>
+                    <CardDescription className="truncate">{getTranslatedText(group.description)}</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -483,7 +492,7 @@ export default function ChecklistsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t('checklists.deleteDialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          {t('checklists.deleteDialog.description', { title: group.title })}
+                          {t('checklists.deleteDialog.description', { title: getTranslatedText(group.title) })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -520,7 +529,7 @@ export default function ChecklistsPage() {
                             htmlFor={task.id} 
                             className={`text-sm font-medium leading-none cursor-pointer transition-all ${task.completed ? 'line-through text-muted-foreground' : ''}`}
                           >
-                            {task.label}
+                            {getTranslatedText(task.label)}
                           </label>
                           <AnimatePresence>
                             {(task.scheduledTime || task.scheduledDate || task.completedTime || task.completedDate) && (

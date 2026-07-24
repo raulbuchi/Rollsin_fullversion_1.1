@@ -378,6 +378,28 @@ export default function InventoryPage() {
     toast({ variant: "destructive", title: "Removido", description: "O item foi removido da lista." })
   }
 
+  const handleClearDemoInventory = () => {
+    if (!db || !inventory || inventory.length === 0) return
+    inventory.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'ingredients', item.id))
+    })
+    toast({
+      title: t('inventory.clearDemoDialog.success'),
+      description: t('inventory.clearDemoDialog.successDesc')
+    })
+  }
+
+  const handleClearDemoShoppingList = () => {
+    if (!db || !shoppingList || shoppingList.length === 0) return
+    shoppingList.forEach(item => {
+      deleteDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'shoppingListItems', item.id))
+    })
+    toast({
+      title: t('shoppingList.clearDemoDialog.success'),
+      description: t('shoppingList.clearDemoDialog.successDesc')
+    })
+  }
+
   const handleInventorySelect = (invId: string) => {
     const selected = inventory?.find(i => i.id === invId)
     if (selected) {
@@ -428,6 +450,35 @@ export default function InventoryPage() {
                 />
               </div>
               <ReceiptScanner restaurantId={restaurantId} />
+              
+              {inventory && inventory.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                      <Trash2 className="w-4 h-4" />
+                      {t('inventory.clearDemo')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('inventory.clearDemoDialog.title')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('inventory.clearDemoDialog.description')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearDemoInventory}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t('common.confirm')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
@@ -683,6 +734,34 @@ export default function InventoryPage() {
               />
             </div>
             
+            {shoppingList && shoppingList.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                    <Trash2 className="w-4 h-4" />
+                    {t('shoppingList.clearDemo')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('shoppingList.clearDemoDialog.title')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('shoppingList.clearDemoDialog.description')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleClearDemoShoppingList}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {t('common.confirm')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Dialog open={isAddShoppingItemDialogOpen} onOpenChange={setIsAddShoppingItemDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">

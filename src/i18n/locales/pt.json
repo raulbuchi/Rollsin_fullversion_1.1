@@ -55,6 +55,13 @@
   "inventory": {
     "title": "Gestão de Inventário",
     "description": "Controle de insumos e lista de compras.",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo",
+      "description": "Esta ação irá remover permanentemente todos os insumos do inventário. Deseja continuar?",
+      "success": "Dados Demo Removidos",
+      "successDesc": "Todos os insumos da versão demo foram excluídos do inventário com sucesso."
+    },
     "tabs": {
       "inventory": "Inventário",
       "shoppingList": "Lista de Compras"
@@ -129,10 +136,86 @@
       "deleted": "O item foi excluído do inventário."
     }
   },
+  "materials": {
+    "title": "Equipamentos & Materiais",
+    "description": "Gestão de ativos da cozinha e do salão.",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo (Equipamentos e Materiais)",
+      "description": "Esta ação irá remover permanentemente todos os materiais e equipamentos cadastrados tanto na tabela da Cozinha quanto na do Salão. Deseja continuar?",
+      "success": "Dados Demo Removidos",
+      "successDesc": "Todos os materiais de demonstração das tabelas de Cozinha e Salão foram excluídos com sucesso."
+    },
+    "newAsset": "Novo Ativo",
+    "tabs": {
+      "kitchen": "Cozinha",
+      "hall": "Salão"
+    },
+    "table": {
+      "item": "Item",
+      "subCategory": "Sub-categoria",
+      "qty": "Qtd",
+      "purchase": "Compra",
+      "value": "Valor",
+      "status": "Estado",
+      "actions": "Ações",
+      "empty": "Nenhum material cadastrado nesta categoria."
+    }
+  },
+  "uniforms": {
+    "title": "Gestão de Uniformes",
+    "description": "Controle de enxoval e EPIs da Rolls-In.",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo (Uniformes)",
+      "description": "Esta ação irá remover permanentemente todos os itens de uniformes e enxoval cadastrados. Deseja continuar?",
+      "success": "Dados Demo de Uniformes Removidos",
+      "successDesc": "Todos os itens de demonstração de uniformes foram excluídos com sucesso."
+    },
+    "newItem": "Novo Item"
+  },
+  "recipes": {
+    "title": "Fichas Técnicas & Precificação",
+    "description": "Calcule o CMV real, fotografe seus pratos e defina preços via IA.",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo (Fichas Técnicas)",
+      "description": "Esta ação irá remover permanentemente todas as fichas técnicas cadastradas na versão de demonstração. Deseja continuar?",
+      "success": "Dados Demo das Fichas Técnicas Removidos",
+      "successDesc": "Todas as fichas técnicas de demonstração foram excluídas com sucesso."
+    },
+    "newRecipe": "Nova Ficha",
+    "chooseFromGallery": "Buscar Imagem na Galeria",
+    "uploadPhoto": "Carregar Foto da Galeria",
+    "uploadPhotoDesc": "Selecione uma imagem do prato finalizado da sua galeria."
+  },
+  "settings": {
+    "clearDemoTables": "Apagar Mesas Demo",
+    "clearDemoTablesDialog": {
+      "title": "Apagar Dados da Versão Demo (Mesas)",
+      "description": "Esta ação irá remover permanentemente todas as mesas cadastradas. Deseja continuar?",
+      "success": "Mesas de Demonstração Removidas",
+      "successDesc": "Todas as mesas da versão demo foram excluídas com sucesso."
+    },
+    "clearDemoEmployees": "Apagar Funcionários Demo",
+    "clearDemoEmployeesDialog": {
+      "title": "Apagar Dados da Versão Demo (Funcionários)",
+      "description": "Esta ação irá remover permanentemente todos os funcionários cadastrados na equipe. Deseja continuar?",
+      "success": "Funcionários de Demonstração Removidos",
+      "successDesc": "Todos os funcionários da versão demo foram excluídos com sucesso."
+    }
+  },
   "shoppingList": {
     "search": "Buscar na lista...",
     "smartSuggestion": "Sugestão Inteligente",
     "newItem": "Novo Item",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo da Lista de Compras",
+      "description": "Esta ação irá remover permanentemente todos os itens da lista de compras. Deseja continuar?",
+      "success": "Lista de Compras Limpa",
+      "successDesc": "Todos os itens de demonstração da lista de compras foram excluídos com sucesso."
+    },
     "dialogs": {
       "add": {
         "title": "Adicionar à Lista de Compras",
@@ -170,293 +253,314 @@
     }
   },
   "dashboard": {
-    "title": "Rolls-In Dashboard",
-    "welcome": "Olá, {{name}}. Gerencie sua operação com excelência.",
+    "title": "Painel de Controle",
+    "welcome": "Bem-vindo de volta, {{name}}!",
     "stats": {
-      "sales": "Vendas Hoje",
-      "orders": "Pedidos",
-      "waiting": "aguardando",
-      "cmv": "CMV Médio",
+      "today": "Hoje",
+      "month": "Mês ({{month}})",
+      "wasteHealth": "Saúde do Desperdício",
+      "sales": "Vendas do Dia",
+      "vsYesterday": "vs ontem",
+      "orders": "Pedidos Ativos",
+      "waiting": "em espera",
+      "cmv": "CMV Estimado",
       "waste": "Desperdício Hoje",
-      "vsYesterday": "vs ontem"
+      "wasteHealthy": "Volume de perdas dentro do esperado."
+    },
+    "production": {
+      "title": "Tarefas de Produção",
+      "description": "Sua lista de tarefas atribuídas para hoje",
+      "completedAt": "Concluído às {{time}}",
+      "empty": "Nenhuma tarefa de produção pendente para hoje."
+    },
+    "punchClock": {
+      "title": "Espelho de Ponto",
+      "description": "Registre sua jornada de trabalho",
+      "in": "Entrada",
+      "out": "Saída",
+      "break": "Pausa (min)",
+      "registering": "Registrando...",
+      "register": "Registrar Ponto"
+    },
+    "fixedChecklists": {
+      "title": "Checklists Diários",
+      "groups": {
+        "opening": "Abertura de Turno",
+        "closing": "Fechamento de Turno"
+      },
+      "tasks": {
+        "ac": "Ligar ar-condicionado e iluminação",
+        "tables": "Conferir e higienizar mesas",
+        "cashier": "Abrir caixa do restaurante",
+        "closingCashier": "Conferência e fechamento de caixa",
+        "cleaning": "Higienização da cozinha e salão",
+        "trash": "Retirar lixo e organizar estoque"
+      }
     },
     "alerts": {
       "expiration": {
-        "title": "Atenção! Insumos próximos do vencimento",
-        "expired": "Vencido há {{days}} dias",
-        "today": "Vence hoje",
-        "inDays": "Vence em {{days}} dias"
-      }
-    },
-    "production": {
-      "title": "Produção do Dia",
-      "description": "Suas tarefas diretas para o turno de hoje.",
-      "empty": "Nenhuma tarefa de produção atribuída para você hoje.",
-      "completedAt": "Concluído às {{time}}"
-    },
-    "punchClock": {
-      "title": "Bater Ponto",
-      "description": "Registre sua jornada de hoje.",
-      "in": "Entrada",
-      "out": "Saída",
-      "break": "Intervalo (minutos)",
-      "register": "Registrar Turno",
-      "registering": "Registrando..."
-    },
-    "fixedChecklists": {
-      "title": "Checklists Fixos",
-      "groups": {
-        "opening": "Abertura",
-        "closing": "Encerramento"
-      },
-      "tasks": {
-        "ac": "AC e Som",
-        "tables": "Mesas",
-        "cashier": "Caixa",
-        "closingCashier": "Fch Caixa",
-        "cleaning": "Limpeza",
-        "trash": "Lixo"
-      }
-    }
-  },
-  "checklists": {
-    "title": "Checklists de Operação",
-    "description": "Garanta a excelência e consistência nos processos do seu restaurante.",
-    "pdfReport": "Relatório PDF",
-    "create": "Criar Checklist",
-    "newDialog": {
-      "title": "Novo Checklist Operacional",
-      "description": "Crie uma nova categoria de tarefas para sua equipe.",
-      "fieldTitle": "Título do Checklist",
-      "fieldDesc": "Descrição / Objetivo",
-      "placeholderTitle": "Ex: Limpeza Semanal",
-      "placeholderDesc": "Descreva a finalidade deste processo..."
-    },
-    "taskDialog": {
-      "title": "Adicionar Tópico ao Checklist",
-      "description": "Insira uma nova tarefa para ser executada neste checklist.",
-      "fieldLabel": "Nome da Tarefa / Tópico",
-      "fieldDate": "Data Prevista (Opcional)",
-      "fieldTime": "Hora Prevista (Opcional)",
-      "placeholderLabel": "Ex: Conferir estoque de frigoríficos"
-    },
-    "deleteDialog": {
-      "title": "Excluir Checklist?",
-      "description": "Esta ação excluirá permanentemente o checklist \"{{title}}\" e todos os seus tópicos."
-    },
-    "deleteTaskDialog": {
-      "title": "Excluir Tópico?",
-      "description": "Tem certeza que deseja excluir a tarefa \"{{label}}\" deste checklist?"
-    },
-    "progress": "{{percent}}% concluído",
-    "realExecution": "Execução real:",
-    "scheduled": "Data: {{date}} Hora: {{time}}",
-    "executed": "Executado: {{at}}",
-    "empty": "Este checklist ainda não possui tópicos.",
-    "addFirst": "Adicionar primeiro tópico agora",
-    "pdf": {
-      "title": "ROLLS-IN | RELATÓRIO DE CONFORMIDADE",
-      "checklist": "Checklist: {{title}}",
-      "date": "Data: {{date}}",
-      "compliance": "Taxa de Conformidade: {{progress}}%",
-      "table": {
-        "task": "Tarefa",
-        "status": "Status",
-        "scheduled": "Previsto",
-        "executed": "Executado",
-        "completed": "CONCLUÍDO",
-        "pending": "PENDENTE"
-      },
-      "signature": "Assinatura do Responsável pelo Turno"
-    },
-    "defaultGroups": {
-      "opening": {
-        "title": "Abertura do Salão",
-        "desc": "Tarefas essenciais antes da chegada do primeiro cliente.",
-        "tasks": {
-          "ac": "Ligar ar condicionado e som ambiente",
-          "cleaning": "Verificar limpeza das mesas e cadeiras",
-          "menus": "Conferir cardápios físicos e digitais",
-          "beverages": "Montar estação de bebidas (café, água, gelo)",
-          "bathrooms": "Verificar banheiros (papel, sabonete, limpeza)",
-          "cashier": "Abrir o caixa com troco conferido"
-        }
-      },
-      "kitchen": {
-        "title": "Mise en Place (Cozinha)",
-        "desc": "Preparo dos ingredientes básicos para o turno.",
-        "tasks": {
-          "wash": "Higienização de hortifrutis",
-          "portions": "Porcionamento de proteínas",
-          "sauces": "Preparo de molhos base e caldos",
-          "expiration": "Verificar validade de todos os pré-preparos",
-          "knives": "Afiação de facas e limpeza de bancadas",
-          "fridges": "Conferir temperatura das geladeiras"
-        }
-      },
-      "weekly": {
-        "title": "Limpeza Semanal",
-        "desc": "Manutenção profunda e higienização pesada programada.",
-        "tasks": {
-          "fridges": "Limpeza profunda e descongelamento de frigoríficos",
-          "uniforms": "Lavagem e higienização dos uniformes da equipe",
-          "filters": "Limpeza dos exaustores e troca de filtros",
-          "grease": "Higienização das caixas de gordura",
-          "windows": "Limpeza de vidros, fachadas e luminárias",
-          "stock": "Organização e varredura do estoque seco"
-        }
-      },
-      "outsourced": {
-        "title": "Controle de Terceirizados",
-        "desc": "Monitoramento de serviços de manutenção e limpeza externa.",
-        "tasks": {
-          "pest": "Dedetização e Controle de Pragas (Certificado)",
-          "ducts": "Limpeza Técnica de Exaustores e Dutos",
-          "water": "Higienização das Caixas de Água",
-          "ac": "Manutenção de Ar Condicionado (PMOC)",
-          "waste": "Coleta de Resíduos Especiais / Óleo Usado",
-          "facade": "Limpeza de Vidros de Altura / Fachada",
-          "uniforms": "Lavagem e Higienização de Uniformes (Serviço Externo)"
-        }
-      },
-      "closing": {
-        "title": "Encerramento",
-        "desc": "Procedimentos de segurança e limpeza pós-serviço.",
-        "tasks": {
-          "cashier": "Fechamento do caixa e sangria",
-          "cleaning": "Limpeza de chapas, fornos e fogões",
-          "trash": "Retirada de lixos e higienização de lixeiras",
-          "gas": "Verificar se gás e equipamentos estão desligados",
-          "alarm": "Trancar todas as portas e ativar alarme"
-        }
+        "title": "Alerta de Insumos Próximos do Vencimento",
+        "expired": "Vencido há {{days}}d",
+        "today": "Vence Hoje",
+        "inDays": "Vence em {{days}}d"
       }
     }
   },
   "production": {
     "title": "Gestão de Produção",
-    "description": "Atribua tarefas diretas e acompanhe o progresso da sua equipe.",
+    "description": "Delegue e acompanhe o status das tarefas diárias da cozinha e salão.",
     "delegate": "Delegar Tarefa",
+    "clearDemo": "Apagar Dados Demo",
+    "clearDemoDialog": {
+      "title": "Apagar Dados da Versão Demo",
+      "description": "Esta ação irá remover permanentemente todas as tarefas da gestão de produção. Deseja continuar?",
+      "success": "Dados Demo Removidos",
+      "successDesc": "Todas as tarefas de demonstração foram excluídas com sucesso."
+    },
     "newDialog": {
-      "title": "Nova Tarefa de Produção",
-      "description": "A tarefa aparecerá no checklist do funcionário escolhido.",
-      "responsible": "Funcionário Responsável",
-      "taskName": "Nome da Tarefa",
-      "taskDesc": "Descrição / Instruções",
-      "date": "Data de Execução",
+      "title": "Delegar Nova Tarefa",
+      "description": "Atribua uma tarefa de produção a um colaborador específico.",
+      "responsible": "Responsável",
+      "select": "Selecione um funcionário...",
       "loading": "Carregando equipe...",
-      "select": "Selecione...",
       "none": "Nenhum funcionário encontrado",
-      "placeholderName": "Ex: Porcionar 20kg de filé",
-      "placeholderDesc": "Detalhes específicos...",
-      "success": "Tarefa Atribuída",
-      "successDesc": "Tarefa enviada para {{name}}."
+      "taskName": "Nome da Tarefa",
+      "placeholderName": "Ex: Produção de Molho de Tomate (10L)",
+      "taskDesc": "Instruções / Observações",
+      "placeholderDesc": "Ex: Usar lote novo de tomate e etiquetar data",
+      "date": "Data de Execução",
+      "success": "Tarefa Delegada",
+      "successDesc": "A tarefa foi atribuída a {{name}}."
     },
     "editDialog": {
-      "title": "Editar e Reatribuir Tarefa",
-      "description": "Ajuste os detalhes da tarefa ou mova-a para outro funcionário/data.",
+      "title": "Editar Tarefa",
+      "description": "Altere os detalhes da tarefa selecionada.",
       "success": "Tarefa Atualizada",
-      "successDesc": "As alterações foram salvas."
+      "successDesc": "As alterações foram salvas com sucesso."
     },
     "deleteDialog": {
-      "title": "Excluir Tarefa?",
+      "title": "Excluir Tarefa",
       "description": "Tem certeza que deseja excluir a tarefa \"{{name}}\"? Esta ação não pode ser desfeita."
     },
     "table": {
-      "title": "Painel de Controle de Tarefas",
+      "title": "Quadro Geral de Produção",
       "date": "Data",
-      "employee": "Funcionário",
+      "employee": "Responsável",
       "task": "Tarefa",
       "status": "Status",
       "actions": "Ações",
-      "loading": "Carregando tarefas...",
-      "empty": "Nenhuma tarefa atribuída ainda. Comece delegando uma tarefa no botão acima.",
       "completed": "Concluído",
-      "pending": "Pendente"
+      "pending": "Pendente",
+      "empty": "Nenhuma tarefa de produção registrada até o momento.",
+      "loading": "Carregando tarefas de produção..."
     }
   },
   "reports": {
-    "title": "Inteligência Operacional",
-    "description": "Análise de performance, custos e conformidade.",
+    "title": "Relatórios & Analytics",
+    "description": "Análise de dados operacionais, financeiros e de equipe.",
     "print": "Imprimir",
     "export": "Exportar PDF",
+    "clearDemoFinancial": "Apagar Faturamento Demo",
+    "clearDemoFinancialDialog": {
+      "title": "Apagar Dados da Versão Demo (Faturamento e Margem)",
+      "description": "Esta ação irá remover permanentemente todos os pedidos e faturamentos cadastrados na demonstração. Deseja continuar?",
+      "success": "Dados de Faturamento Removidos",
+      "successDesc": "Todos os dados de faturamento e margem bruta da versão demo foram excluídos com sucesso."
+    },
+    "table": {
+      "date": "Data"
+    },
     "tabs": {
       "financial": "Financeiro",
       "productivity": "Produtividade",
       "hoursBank": "Banco de Horas",
-      "waste": "Food Waste",
-      "cleaning": "Limpeza & Higiene"
+      "waste": "Desperdício",
+      "cleaning": "Higienização"
     },
     "financial": {
-      "revenue": "Faturamento Bruto",
+      "revenue": "Faturamento Total",
       "cogs": "CMV Estimado",
-      "margin": "Margem de Contribuição",
-      "weeklyFlow": "Fluxo Semanal de Vendas",
-      "weeklyFlowDesc": "Comparativo entre faturamento e custos diretos.",
-      "expenseDist": "Distribuição de Despesas",
-      "expenseDistDesc": "Onde seu capital está sendo aplicado.",
-      "chartRevenue": "Venda (R$)",
-      "chartCost": "Custo (R$)"
+      "margin": "Margem Bruta",
+      "weeklyFlow": "Fluxo Semanal (Receita x Custo)",
+      "weeklyFlowDesc": "Acompanhamento diário de entradas e CMV da semana",
+      "chartRevenue": "Receita",
+      "chartCost": "Custo",
+      "expenseDist": "Distribuição de Custos",
+      "expenseDistDesc": "Detalhamento de despesas operacionais"
     },
     "productivity": {
-      "efficiency": "Eficiência de Produção",
+      "efficiency": "Eficiência Geral",
       "totalTasks": "Total de Tarefas",
       "hoursRegistered": "Horas Registradas",
       "employees": "Colaboradores",
-      "ranking": "Ranking de Conformidade de Equipe",
-      "rankingDesc": "Baseado na conclusão de tarefas atribuídas na Gestão de Produção.",
-      "empty": "Nenhum dado de produtividade disponível ainda.",
-      "tasksCompleted": "{{count}} tarefas concluídas"
+      "ranking": "Ranking de Produtividade",
+      "rankingDesc": "Desempenho da equipe por volume de tarefas concluídas",
+      "tasksCompleted": "{{count}} tarefas concluídas",
+      "empty": "Nenhum dado de produtividade disponível."
     },
     "hoursBank": {
-      "totalHours": "Total de Horas (Geral)",
-      "average": "Média por Funcionário",
-      "active": "Funcionários Ativos",
-      "refMonth": "Ref. Mês",
-      "ideal": "Ideal: 160h",
-      "totalRef": "Total: 12",
-      "tableTitle": "Extrato do Banco de Horas",
-      "tableDesc": "Resumo de horas acumuladas por colaborador.",
-      "thEmployee": "Funcionário",
-      "thShifts": "Turnos Realizados",
+      "totalHours": "Horas Acumuladas",
+      "refMonth": "Mês Atual",
+      "average": "Média por Colaborador",
+      "ideal": "Ideal",
+      "active": "Colaboradores Ativos",
+      "totalRef": "Total",
+      "tableTitle": "Espelho de Ponto da Equipe",
+      "tableDesc": "Histórico de turnos e horas trabalhadas por funcionário",
+      "thEmployee": "Colaborador",
+      "thShifts": "Turnos",
       "thAccumulated": "Horas Acumuladas",
       "thStatus": "Status",
       "thActions": "Ações",
       "dialog": {
-        "title": "Extrato de Banco de Horas",
-        "description": "Histórico detalhado de turnos para {{name}}",
+        "title": "Extrato do Colaborador",
+        "description": "Detalhamento de horas para {{name}}",
         "totalHours": "Total de Horas",
         "totalShifts": "Total de Turnos",
-        "averagePerShift": "Média por Turno",
-        "exportIndividual": "Exportar Extrato Individual"
+        "averagePerShift": "Média / Turno",
+        "exportIndividual": "Exportar PDF do Colaborador"
       }
     },
     "waste": {
       "totalWeight": "Peso Total Desperdiçado",
-      "estimatedCost": "Custo Estimado de Perda",
+      "estimatedCost": "Custo Estimado",
       "reductionGoal": "Meta de Redução",
-      "categoryDist": "Desperdício por Categoria",
-      "categoryDistDesc": "Distribuição do volume de perdas.",
-      "trend": "Tendência de Perdas (30 dias)"
+      "categoryDist": "Perdas por Categoria",
+      "categoryDistDesc": "Distribuição dos motivos de desperdício",
+      "trend": "Tendência de Desperdício (kg)"
     },
     "cleaning": {
-      "sanitary": "Conformidade Sanitária (Semanal)",
-      "sanitaryDesc": "Execução dos checklists de limpeza profunda.",
-      "linen": "Higienização de Enxoval",
-      "linenDesc": "Controle de lavanderia e uniformes.",
-      "totalCleaned": "Total Higienizado",
+      "sanitary": "Higienização Sanitária",
+      "sanitaryDesc": "Registro de limpeza de caixas d'água e reservatórios",
+      "linen": "Controle de Enxoval",
+      "linenDesc": "Status de lavanderia e substituição de panos/toalhas",
+      "totalCleaned": "Higienizações no Prazo",
       "last7Days": "Últimos 7 dias",
-      "linenStatus": "Status do Enxoval",
-      "inUse": "Em uso",
-      "inLaundry": "Em lavanderia",
-      "replacement": "Substituição necessária"
+      "linenStatus": "Status de Enxoval",
+      "inUse": "Em Uso",
+      "inLaundry": "Na Lavanderia",
+      "replacement": "Reposição"
     },
     "pdf": {
-      "title": "ROLLS-IN | RELATÓRIO EXECUTIVO",
-      "individualTitle": "ROLLS-IN | EXTRATO INDIVIDUAL",
-      "issuedAt": "Emitido em: {{at}}",
+      "title": "Relatório Operacional",
       "type": "Tipo: {{type}}",
+      "issuedAt": "Emitido em: {{at}}",
+      "individualTitle": "Relatório Individual de Horas",
       "employee": "Colaborador: {{name}}",
-      "totalAccumulated": "Total de Horas Acumuladas: {{hours}}h"
+      "totalAccumulated": "Total Acumulado: {{hours}}h"
+    }
+  },
+  "checklists": {
+    "title": "Gestão de Checklists",
+    "description": "Acompanhe e execute listas de verificação para rotinas operacionais e segurança de alimentos.",
+    "pdfReport": "Relatório PDF",
+    "create": "Criar Checklist",
+    "progress": "{{percent}}% concluído",
+    "empty": "Nenhuma tarefa nesta lista.",
+    "addFirst": "Adicionar primeira tarefa",
+    "scheduled": "Agendado: {{date}} às {{time}}",
+    "realExecution": "Execução Real:",
+    "executed": "Executado em {{at}}",
+    "newDialog": {
+      "title": "Novo Grupo de Checklist",
+      "description": "Crie uma nova lista de verificação para sua equipe.",
+      "fieldTitle": "Título da Lista",
+      "placeholderTitle": "Ex: Inspeção de Extintores",
+      "fieldDesc": "Descrição / Instruções",
+      "placeholderDesc": "Ex: Verificação periódica de segurança"
+    },
+    "taskDialog": {
+      "title": "Nova Tarefa",
+      "description": "Adicione uma nova tarefa a esta lista.",
+      "fieldLabel": "Descrição da Tarefa",
+      "placeholderLabel": "Ex: Verificar temperatura do freezer",
+      "fieldDate": "Data Agendada",
+      "fieldTime": "Horário Agendado"
+    },
+    "deleteDialog": {
+      "title": "Excluir Checklist",
+      "description": "Tem certeza que deseja excluir o checklist \"{{title}}\"?"
+    },
+    "deleteTaskDialog": {
+      "title": "Excluir Tarefa",
+      "description": "Tem certeza que deseja excluir a tarefa \"{{label}}\"?"
+    },
+    "defaultGroups": {
+      "opening": {
+        "title": "Abertura de Turno",
+        "desc": "Rotina inicial antes de abrir a casa.",
+        "tasks": {
+          "ac": "Ligar ar-condicionado e iluminação",
+          "cleaning": "Conferir limpeza geral do salão",
+          "menus": "Organizar cardápios e galheteiros",
+          "beverages": "Abastecer geladeiras de bebidas",
+          "bathrooms": "Inspecionar banheiros e insumos",
+          "cashier": "Abrir caixa do restaurante"
+        }
+      },
+      "kitchen": {
+        "title": "Rotina de Cozinha",
+        "desc": "Higiene, insumos e pré-preparo.",
+        "tasks": {
+          "wash": "Higienização das bancadas de corte",
+          "portions": "Conferir porcionamento de carnes e peixes",
+          "sauces": "Verificar temperatura e validade dos molhos",
+          "expiration": "Verificação das etiquetas de validade PVPS",
+          "knives": "Afiamento e higienização das facas",
+          "fridges": "Medição e registro de temperatura das geladeiras"
+        }
+      },
+      "weekly": {
+        "title": "Limpeza Semanal",
+        "desc": "Higienização profunda e organização.",
+        "tasks": {
+          "fridges": "Limpeza interna profunda das geladeiras",
+          "uniforms": "Troca e higienização dos panos de prato e aventais",
+          "filters": "Limpeza dos filtros da coifa",
+          "grease": "Limpeza e esvaziamento da caixa de gordura",
+          "windows": "Lavagem das janelas e vidros",
+          "stock": "Organização do estoque seco"
+        }
+      },
+      "outsourced": {
+        "title": "Serviços Terceirizados",
+        "desc": "Acompanhamento de fornecedores externos.",
+        "tasks": {
+          "pest": "Dedetização e controle de pragas",
+          "ducts": "Limpeza de dutos e exaustão",
+          "water": "Higienização da caixa d'água",
+          "ac": "Manutenção preventiva do ar-condicionado",
+          "waste": "Coleta e descarte de óleo vegetal usado",
+          "facade": "Lavagem da fachada e letreiro",
+          "uniforms": "Coleta e devolução da lavanderia industrial"
+        }
+      },
+      "closing": {
+        "title": "Fechamento de Turno",
+        "desc": "Segurança e organização ao encerrar.",
+        "tasks": {
+          "cashier": "Conferência e fechamento de caixa",
+          "cleaning": "Higienização e lavagem do piso da cozinha",
+          "trash": "Retirada de todo o lixo do restaurante",
+          "gas": "Desligamento de gás e equipamentos térmicos",
+          "alarm": "Ativação do alarme e travamento das portas"
+        }
+      }
+    },
+    "pdf": {
+      "title": "Relatório de Checklist Operacional",
+      "checklist": "Checklist: {{title}}",
+      "date": "Data: {{date}}",
+      "compliance": "Conformidade: {{progress}}%",
+      "signature": "Assinatura do Gerente / Responsável",
+      "table": {
+        "task": "Tarefa / Item",
+        "status": "Status",
+        "scheduled": "Agendado",
+        "executed": "Execução",
+        "completed": "Concluído",
+        "pending": "Pendente"
+      }
     }
   },
   "common": {
