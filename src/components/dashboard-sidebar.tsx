@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { PWAInstallButton } from './PWAInstallButton'
 
 interface NavItem {
   titleKey: string
@@ -204,7 +205,8 @@ export function SidebarContent({ role, onItemClick, isCollapsed = false }: { rol
 
       <div className={cn("mt-auto p-6 border-t bg-muted/10 transition-all duration-300", isCollapsed ? "px-4 flex flex-col items-center" : "")}>
         {!isCollapsed && (
-          <div className="mb-6">
+          <div className="mb-4 space-y-3">
+            <PWAInstallButton className="w-full justify-center" />
             <LanguageSwitcher />
           </div>
         )}

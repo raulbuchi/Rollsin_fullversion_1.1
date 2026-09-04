@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.2" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="#111827" />
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="#064E3B" />
+  <rect x="32" y="32" width="448" height="448" rx="88" fill="url(#grad)" />
+  
+  <!-- Chef Hat / Gourmet Plate Emblem -->
+  <g filter="url(#shadow)" transform="translate(256, 256) scale(1.1)">
+    <!-- Plate base circle -->
+    <circle cx="0" cy="20" r="110" fill="none" stroke="#FFFFFF" stroke-width="12" opacity="0.9" />
+    <circle cx="0" cy="20" r="85" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.4" />
+    
+    <!-- Stylized Chef Toque / Cutlery -->
+    <path d="M-45,-25 C-65,-45 -65,-80 -40,-95 C-25,-105 0,-105 0,-105 C0,-105 25,-105 40,-95 C65,-80 65,-45 45,-25 C55,-10 50,15 35,25 L-35,25 C-50,15 -55,-10 -45,-25 Z" fill="#FFFFFF" />
+    <rect x="-35" y="30" width="70" height="14" rx="4" fill="#F59E0B" />
+    
+    <!-- Fork and Knife accents -->
+    <path d="M-75,0 C-75,-25 -65,-40 -65,-40 L-65,50 L-75,50 Z" fill="#FFFFFF" opacity="0.8" />
+    <path d="M65,-40 C65,-40 75,-25 75,0 L75,50 L65,50 Z" fill="#FFFFFF" opacity="0.8" />
+  </g>
+</svg>

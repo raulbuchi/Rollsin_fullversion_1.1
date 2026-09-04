@@ -1,5 +1,6 @@
 {
   "name": "Rollsin vs1.1",
   "description": "Rollsin Fullversion vs1.1",
-  "requestFramePermissions": ["camera"]
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, CheckCircle2, Circle } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, CheckCircle2, Circle, FileSpreadsheet, Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc } from 'firebase/firestore'
@@ -419,6 +420,56 @@ export default function InventoryPage() {
     }
   }
 
+  const handleExportCSV = () => {
+    if (!filteredInventory || filteredInventory.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem itens para exportar",
+        description: "Não há itens no inventário para gerar o relatório CSV."
+      })
+      return
+    }
+
+    const dataToExport = filteredInventory.map(item => {
+      const isLowStock = item.quantity <= (item.minStock || 0)
+      const expStatus = getExpirationStatus(item.expirationDate)
+      const suppliersList = item.suppliers?.map(s => `${s.name} (R$${s.cost.toFixed(2)}/${s.unit})`).join('; ') || ''
+
+      return {
+        'Ingrediente / Item': item.name,
+        'Categoria': item.category || 'Outros',
+        'Estoque Atual': item.quantity,
+        'Unidade': item.unit,
+        'Custo Unitário (R$)': item.cost,
+        'Valor Total em Estoque (R$)': Number((item.quantity * item.cost).toFixed(2)),
+        'Estoque Mínimo': item.minStock || 0,
+        'Data de Validade': item.expirationDate ? item.expirationDate.split('-').reverse().join('/') : '-',
+        'Status do Estoque': isLowStock ? 'CRÍTICO (Abaixo do Mínimo)' : 'Normal',
+        'Status de Validade': expStatus?.label || 'OK',
+        'Fornecedores Cadastrados': suppliersList
+      }
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet)
+    const blob = new Blob(["\uFEFF" + csvOutput], { type: "text/csv;charset=utf-8;" })
+    
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    const dateStr = new Date().toISOString().split('T')[0]
+    
+    link.setAttribute("href", url)
+    link.setAttribute("download", `inventario_rolls_in_${dateStr}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: "Inventário Exportado!",
+      description: `Arquivo CSV gerado com sucesso para contagem offline (${filteredInventory.length} itens).`
+    })
+  }
+
   if (!mounted) return null
 
   return (
@@ -450,6 +501,15 @@ export default function InventoryPage() {
                 />
               </div>
               <ReceiptScanner restaurantId={restaurantId} />
+              
+              <Button
+                variant="outline"
+                onClick={handleExportCSV}
+                className="gap-2 border-emerald-600/30 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 font-medium"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Exportar CSV</span>
+              </Button>
               
               {inventory && inventory.length > 0 && (
                 <AlertDialog>

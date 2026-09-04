@@ -13,6 +13,7 @@ import { Menu } from 'lucide-react'
 import Image from 'next/image'
 import { PlaceHolderImages } from '@/lib/placeholder-images'
 import { cn } from '@/lib/utils'
+import { PWAInstallButton } from '@/components/PWAInstallButton'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user: localUser, isLoading: isLocalLoading } = useAuth()
@@ -72,8 +73,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <span className="font-bold text-xs text-primary font-headline tracking-tight uppercase">ROLLS-IN</span>
-          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-secondary-foreground">
-            {localUser.role[0]}
+          <div className="flex items-center gap-2">
+            <PWAInstallButton className="text-[11px] h-7 px-2" />
+            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-secondary-foreground">
+              {localUser.role[0]}
+            </div>
           </div>
         </header>
 
