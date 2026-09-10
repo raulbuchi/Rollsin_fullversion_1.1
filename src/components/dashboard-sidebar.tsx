@@ -105,12 +105,6 @@ const navItems: NavItem[] = [
     roles: ['Admin', 'Serviço', 'Chefe', 'Caixa', 'Barman', 'Horista', 'Passe']
   },
   {
-    titleKey: 'sidebar.nav.shoppingList',
-    href: '/dashboard/shopping-list',
-    icon: <ShoppingBag className="w-5 h-5 shrink-0" />,
-    roles: ['Admin', 'Chefe']
-  },
-  {
     titleKey: 'sidebar.nav.sales',
     href: '/dashboard/sales',
     icon: <ShoppingCart className="w-5 h-5 shrink-0" />,
@@ -120,12 +114,6 @@ const navItems: NavItem[] = [
     titleKey: 'sidebar.nav.reports',
     href: '/dashboard/reports',
     icon: <FileText className="w-5 h-5 shrink-0" />,
-    roles: ['Admin']
-  },
-  {
-    titleKey: 'sidebar.nav.plans',
-    href: '/dashboard/plans',
-    icon: <CreditCard className="w-5 h-5 shrink-0" />,
     roles: ['Admin']
   },
   {

@@ -9,7 +9,6 @@ import { LayoutDashboard, Users, Calculator, UtensilsCrossed } from 'lucide-reac
 import { PlaceHolderImages } from '@/lib/placeholder-images'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { PlansSection } from '@/components/PlansSection'
 
 export default function LandingPage() {
   const { t } = useTranslation()
@@ -96,9 +95,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Plans & Pricing Section */}
-      <PlansSection />
 
       <footer className="py-10 border-t mt-auto text-center text-muted-foreground text-sm bg-card">
         <div className="container mx-auto px-4">

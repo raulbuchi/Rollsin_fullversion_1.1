@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAuth, UserRole } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
+import { PlansSection } from '@/components/PlansSection'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
@@ -719,6 +720,11 @@ export default function SettingsPage() {
             ))}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="pt-12 border-t mt-12">
+        <h2 className="text-2xl font-bold mb-6 text-primary">Meus Planos e Assinaturas</h2>
+        <PlansSection title="Gerencie sua Assinatura" subtitle="Veja seus planos atuais ou faça um upgrade para expandir seu negócio." />
       </div>
     </div>
   )

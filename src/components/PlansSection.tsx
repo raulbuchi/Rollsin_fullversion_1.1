@@ -72,7 +72,7 @@ export const PLANS_DATA: PlanProps[] = [
       'Ordens de produção & baixa em cadeia',
       'Escalas de trabalho Drag & Drop & Ponto',
       'Conferência de estoque offline (CSV)',
-      '30 dias de teste grátis (Google Play Console ID: rolls_in_pro)'
+      '30 dias de teste grátis'
     ],
     buttonText: 'Assinar Plano Pro',
     isPopular: true
@@ -115,7 +115,7 @@ export function PlansSection({ title, subtitle }: { title?: string; subtitle?: s
   }
 
   const handleGooglePlayPurchase = async (plan: PlanProps) => {
-    const targetRestaurantId = restaurantName ? restaurantName.toLowerCase().replace(/\s+/g, '-') : 'gp-restaurante-demo'
+    const targetRestaurantId = restaurantName ? restaurantName.toLowerCase().replace(/\s+/g, '-') : 'restaurante-cliente'
     await subscribeToPlan(plan.googlePlayId, targetRestaurantId)
     setIsModalOpen(false)
   }
@@ -287,12 +287,7 @@ export function PlansSection({ title, subtitle }: { title?: string; subtitle?: s
                   </ul>
 
                   {/* Google Play Product Badge */}
-                  <div className="mb-2">
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-slate-800 text-emerald-400 border border-slate-700">
-                      <Play className="w-2.5 h-2.5 fill-emerald-400 text-emerald-400" />
-                      ID Google Play: {plan.googlePlayId}
-                    </span>
-                  </div>
+                  {/* Badge removido */}
 
                   {/* Button */}
                   <div className="pt-2 mt-auto space-y-2">
@@ -343,7 +338,7 @@ export function PlansSection({ title, subtitle }: { title?: string; subtitle?: s
               <Label htmlFor="restaurant">Nome do Estabelecimento *</Label>
               <Input
                 id="restaurant"
-                placeholder="Ex: Bistro Rolls-In / Hamburgueria Artesanal"
+                placeholder="Nome do seu estabelecimento"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
                 required
@@ -354,7 +349,7 @@ export function PlansSection({ title, subtitle }: { title?: string; subtitle?: s
               <Label htmlFor="phone">Telefone / WhatsApp *</Label>
               <Input
                 id="phone"
-                placeholder="(11) 99999-9999"
+                placeholder="Seu telefone"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -366,7 +361,7 @@ export function PlansSection({ title, subtitle }: { title?: string; subtitle?: s
               <Input
                 id="email"
                 type="email"
-                placeholder="contato@restaurante.com.br"
+                placeholder="seu-email@dominio.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
