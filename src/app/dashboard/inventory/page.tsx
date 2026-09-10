@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, CheckCircle2, Circle, FileSpreadsheet, Download } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Image as ImageIcon, Upload, AlertTriangle, ShoppingBag, CheckCircle2, Circle, FileSpreadsheet, Download, FileText } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useAuth } from '@/lib/store'
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase'
 import { collection, query, doc } from 'firebase/firestore'
@@ -470,6 +472,86 @@ export default function InventoryPage() {
     })
   }
 
+  const handleExportPDF = () => {
+    if (!filteredInventory || filteredInventory.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem itens para exportar",
+        description: "Não há itens no inventário para gerar o relatório PDF."
+      })
+      return
+    }
+
+    const doc = new jsPDF()
+
+    doc.setFontSize(18)
+    doc.setTextColor(45, 133, 90)
+    doc.text("Rolls-In - Relatório de Inventário", 14, 20)
+
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    const todayStr = format(new Date(), "dd/MM/yyyy HH:mm")
+    doc.text(`Data do Relatório: ${todayStr} | Total de Itens: ${filteredInventory.length}`, 14, 27)
+
+    const tableColumn = ["Ingredient Name", "Quantity", "Status", "Expiration Date"]
+    const tableRows = filteredInventory.map(item => {
+      const isLowStock = item.quantity <= (item.minStock || 0)
+      const expStatus = getExpirationStatus(item.expirationDate)
+
+      const qtyStr = `${item.quantity} ${item.unit.toUpperCase()}`
+
+      let statusStr = isLowStock
+        ? 'CRÍTICO (Abaixo do Mínimo)'
+        : (t(`inventory.status.${item.status.toLowerCase()}`) || item.status)
+
+      let expDateStr = '-'
+      if (item.expirationDate) {
+        try {
+          expDateStr = new Date(item.expirationDate + 'T00:00:00').toLocaleDateString(i18n.language || 'pt-BR')
+          if (expStatus && expStatus.status !== 'ok') {
+            expDateStr += ` (${expStatus.label})`
+          }
+        } catch (e) {
+          expDateStr = item.expirationDate
+        }
+      }
+
+      return [
+        item.name,
+        qtyStr,
+        statusStr,
+        expDateStr
+      ]
+    })
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 34,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [45, 133, 90],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 248]
+      }
+    })
+
+    const dateStr = format(new Date(), 'yyyy-MM-dd')
+    doc.save(`relatorio_inventario_${dateStr}.pdf`)
+
+    toast({
+      title: "Relatório PDF Gerado!",
+      description: `Arquivo PDF baixado com sucesso (${filteredInventory.length} itens).`
+    })
+  }
+
   if (!mounted) return null
 
   return (
@@ -509,6 +591,15 @@ export default function InventoryPage() {
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                 <span>Exportar CSV</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleExportPDF}
+                className="gap-2 border-red-600/30 text-red-700 hover:bg-red-50 dark:text-red-400 font-medium"
+              >
+                <FileText className="w-4 h-4 text-red-600" />
+                <span>Exportar PDF</span>
               </Button>
               
               {inventory && inventory.length > 0 && (
