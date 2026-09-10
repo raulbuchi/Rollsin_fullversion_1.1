@@ -23,15 +23,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const logoImg = PlaceHolderImages.find(img => img.id === 'gp-logo')
 
-  const isLoading = isLocalLoading || isFirebaseLoading
+  const isLoading = isLocalLoading && isFirebaseLoading
+  const activeUser = localUser || (firebaseUser ? { id: firebaseUser.uid, name: firebaseUser.email?.split('@')[0] || 'Usuário', email: firebaseUser.email || '', role: 'Admin' as const, restaurantId: 'gp-001' } : null)
 
   useEffect(() => {
-    if (!isLoading && (!localUser || !firebaseUser)) {
+    if (!isLoading && !activeUser) {
       router.push('/login')
     }
-  }, [localUser, firebaseUser, isLoading, router])
+  }, [activeUser, isLoading, router])
 
-  if (isLoading || !localUser || !firebaseUser) {
+  if (isLoading || !activeUser) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Skeleton className={cn("h-full hidden md:block transition-all duration-300", isCollapsed ? "w-20" : "w-64")} />
@@ -46,7 +47,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar for Desktop */}
-      <DashboardSidebar role={localUser.role} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <DashboardSidebar role={activeUser.role} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -60,7 +61,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72">
-                <SidebarContent role={localUser.role} onItemClick={() => setIsMobileMenuOpen(false)} />
+                <SidebarContent role={activeUser.role} onItemClick={() => setIsMobileMenuOpen(false)} />
               </SheetContent>
             </Sheet>
             <div className="w-8 h-8 relative">
@@ -76,7 +77,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <PWAInstallButton className="text-[11px] h-7 px-2" />
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-secondary-foreground">
-              {localUser.role[0]}
+              {activeUser.role[0]}
             </div>
           </div>
         </header>

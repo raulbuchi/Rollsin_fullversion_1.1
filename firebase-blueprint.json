@@ -4,11 +4,17 @@
     "Restaurant": {
       "title": "Restaurant",
       "type": "object",
-      "description": "Restaurante principal que gerencia a suite.",
+      "description": "Restaurante principal que gerencia a suite e controle de plano de assinatura.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "ownerId": { "type": "string" }
+        "ownerId": { "type": "string" },
+        "planId": { "type": "string", "enum": ["starter", "pro", "enterprise"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "trialEndDate": { "type": "string", "format": "date-time" },
+        "subscriptionStatus": { "type": "string", "enum": ["trial", "active", "overdue", "canceled"] },
+        "monthlyFeeUSD": { "type": "number" },
+        "nextBillingDate": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "ownerId"]
     },
@@ -348,6 +354,18 @@
           "entityName": "Reservation",
           "schema": { "$ref": "#/backend/entities/Reservation" },
           "description": "Reservas e banquetes."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/recipes/{recipeId}",
+        "definition": {
+          "description": "Fichas técnicas e receitas do restaurante."
+        }
+      },
+      {
+        "path": "/restaurants/{restaurantId}/config/{configId}",
+        "definition": {
+          "description": "Configurações internas e integração AI do restaurante."
         }
       },
       {

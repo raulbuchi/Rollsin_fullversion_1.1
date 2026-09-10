@@ -25,13 +25,25 @@ export function useAuth() {
     setIsLoading(false)
   }, [])
 
-  const login = (role: UserRole, firebaseUid: string, email: string = 'user@rollsin.com.br') => {
+  const login = (role: UserRole, firebaseUid: string, restaurantIdOrEmail: string = 'gp-001', emailParam?: string) => {
+    let restaurantId = 'gp-001'
+    let email = 'user@rollsin.com.br'
+
+    if (restaurantIdOrEmail.includes('@')) {
+      email = restaurantIdOrEmail
+    } else {
+      restaurantId = restaurantIdOrEmail || 'gp-001'
+      if (emailParam) {
+        email = emailParam
+      }
+    }
+
     const newUser: User = {
       id: firebaseUid,
-      name: email.split('@')[0],
+      name: email.split('@')[0] || 'Usuário',
       email: email,
       role: role,
-      restaurantId: 'gp-001'
+      restaurantId: restaurantId
     }
     setUser(newUser)
     localStorage.setItem('rms_user', JSON.stringify(newUser))

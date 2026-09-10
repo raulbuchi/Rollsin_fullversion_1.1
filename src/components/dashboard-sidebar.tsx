@@ -22,7 +22,8 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  ShoppingBag
+  ShoppingBag,
+  CreditCard
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UserRole } from '@/lib/store'
@@ -119,6 +120,12 @@ const navItems: NavItem[] = [
     titleKey: 'sidebar.nav.reports',
     href: '/dashboard/reports',
     icon: <FileText className="w-5 h-5 shrink-0" />,
+    roles: ['Admin']
+  },
+  {
+    titleKey: 'sidebar.nav.plans',
+    href: '/dashboard/plans',
+    icon: <CreditCard className="w-5 h-5 shrink-0" />,
     roles: ['Admin']
   },
   {
