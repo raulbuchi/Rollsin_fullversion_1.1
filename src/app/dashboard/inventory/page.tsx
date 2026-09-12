@@ -472,6 +472,65 @@ export default function InventoryPage() {
     })
   }
 
+  const handleExportShoppingListPDF = () => {
+    if (!filteredShoppingList || filteredShoppingList.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Sem itens para exportar",
+        description: "Não há itens na lista de compras para gerar o relatório PDF."
+      })
+      return
+    }
+
+    const doc = new jsPDF()
+
+    doc.setFontSize(18)
+    doc.setTextColor(45, 133, 90)
+    doc.text("Rolls-In - Lista de Compras", 14, 20)
+
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    const todayStr = format(new Date(), "dd/MM/yyyy HH:mm")
+    doc.text(`Data do Relatório: ${todayStr} | Total de Itens: ${filteredShoppingList.length}`, 14, 27)
+
+    const tableColumn = ["Item", "Quantidade", "Categoria", "Status"]
+    const tableRows = filteredShoppingList.map(item => {
+      return [
+        item.name,
+        `${item.quantityToBuy} ${item.unit.toUpperCase()}`,
+        item.category || 'Outros',
+        item.purchased ? 'Comprado' : 'Pendente'
+      ]
+    })
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 34,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [45, 133, 90],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 248]
+      }
+    })
+
+    const dateStr = format(new Date(), 'yyyy-MM-dd')
+    doc.save(`lista_compras_${dateStr}.pdf`)
+
+    toast({
+      title: "Lista Exportada!",
+      description: `Arquivo PDF da lista de compras baixado com sucesso (${filteredShoppingList.length} itens).`
+    })
+  }
+
   const handleExportPDF = () => {
     if (!filteredInventory || filteredInventory.length === 0) {
       toast({
@@ -886,13 +945,23 @@ export default function InventoryPage() {
             </div>
             
             {shoppingList && shoppingList.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
-                    <Trash2 className="w-4 h-4" />
-                    {t('shoppingList.clearDemo')}
-                  </Button>
-                </AlertDialogTrigger>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleExportShoppingListPDF}
+                  className="gap-2 border-red-600/30 text-red-700 hover:bg-red-50 dark:text-red-400 font-medium"
+                >
+                  <FileText className="w-4 h-4 text-red-600" />
+                  <span>Exportar PDF</span>
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="gap-2 text-destructive hover:bg-destructive/10 border-destructive/30">
+                      <Trash2 className="w-4 h-4" />
+                      {t('shoppingList.clearDemo')}
+                    </Button>
+                  </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{t('shoppingList.clearDemoDialog.title')}</AlertDialogTitle>
@@ -911,7 +980,6 @@ export default function InventoryPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            )}
 
             <Dialog open={isAddShoppingItemDialogOpen} onOpenChange={setIsAddShoppingItemDialogOpen}>
               <DialogTrigger asChild>
