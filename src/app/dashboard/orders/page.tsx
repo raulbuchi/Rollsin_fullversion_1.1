@@ -2,6 +2,8 @@
 "use client"
 
 import { useState, useMemo } from 'react'
+import { Recipe } from '@/lib/models'
+import Image from 'next/image'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +25,12 @@ import {
   ListPlus,
   ArrowRight,
   Save,
-  Calculator
+  Calculator,
+  Coffee,
+  Pizza,
+  Cake,
+  MoreHorizontal,
+  House
 } from 'lucide-react'
 import {
   Dialog,
@@ -93,6 +100,11 @@ export default function OrdersPage() {
     return query(collection(db, 'restaurants', restaurantId, 'tables'), orderBy('tableNumber', 'asc'))
   }, [db, user?.uid, restaurantId])
 
+  const recipesQuery = useMemoFirebase(() => {
+    if (!db || !restaurantId) return null
+    return query(collection(db, 'restaurants', restaurantId, 'recipes'))
+  }, [db, restaurantId])
+
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !restaurantId) return null
     return query(
@@ -102,6 +114,7 @@ export default function OrdersPage() {
   }, [db, user?.uid, restaurantId])
 
   const { data: tables } = useCollection<TableData>(tablesQuery)
+  const { data: recipes } = useCollection<Recipe>(recipesQuery)
   const { data: allOrders } = useCollection<OrderData>(ordersQuery)
   
   const activeOrders = allOrders?.filter(o => ['Pending', 'Preparing', 'Ready'].includes(o.status)) || []
@@ -121,11 +134,18 @@ export default function OrdersPage() {
   const [occupantsCount, setOccupantsCount] = useState<number>(1)
 
   // Item Addition State
+  const [selectedCategory, setSelectedCategory] = useState<string>('Pratos Principais')
   const [currentItems, setCurrentItems] = useState<OrderItem[]>([])
   const [newItemName, setNewItemName] = useState('')
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemQty, setNewItemQty] = useState('1')
   const [newItemCourse, setNewItemCourse] = useState<'Entrada' | 'Prato Principal' | 'Sobremesa' | 'Bebida'>('Prato Principal')
+
+  const filteredRecipes = useMemo(() => {
+    if (!recipes) return []
+    if (selectedCategory === 'Outros') return recipes.filter(r => !['Bebidas', 'Pratos Principais', 'Entradas', 'Sobremesas'].includes(r.category || ''))
+    return recipes.filter(r => r.category === selectedCategory)
+  }, [recipes, selectedCategory])
 
   const handleAddItem = () => {
     if (!newItemName || !newItemPrice) return
@@ -469,146 +489,92 @@ export default function OrdersPage() {
       <Dialog open={isOrderDialogOpen || isTakeawayDialogOpen || isEditItemsDialogOpen} onOpenChange={(open) => {
         if (!open) resetForm()
       }}>
-        <DialogContent className="sm:max-w-[450px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className={isTakeawayDialogOpen ? "text-secondary" : "text-primary"}>
-              {isEditItemsDialogOpen ? "Editar Itens do Pedido" : isTakeawayDialogOpen ? "Novo Take-away (Balcão)" : "Lançar Pedido (Mesa)"}
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#1f2937] text-white">
+          <DialogHeader className="p-4 border-b border-gray-700">
+            <DialogTitle className="text-blue-400">
+                {isEditItemsDialogOpen ? "Editar Itens do Pedido" : isTakeawayDialogOpen ? "Novo Take-away (Balcão)" : "Lançar Pedido (Mesa)"}
             </DialogTitle>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {!isEditItemsDialogOpen && !isTakeawayDialogOpen && (
               <div className="space-y-2">
-                <Label>Selecione a Mesa</Label>
+                <Label className="text-gray-400 text-sm">Selecione a Mesa</Label>
                 <Select value={selectedTableId} onValueChange={setSelectedTableId}>
-                  <SelectTrigger><SelectValue placeholder="Escolha a mesa..." /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white"><SelectValue placeholder="Escolha a mesa..." /></SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
                     {tables?.map(t => <SelectItem key={t.id} value={t.id}>Mesa {t.tableNumber}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            {isTakeawayDialogOpen && !isEditItemsDialogOpen && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">Clientes para Retirada</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      value={newCustomerManual.name} 
-                      onChange={(e) => setNewCustomerManual({...newCustomerManual, name: e.target.value})} 
-                      placeholder="Nome do Cliente" 
-                      className="h-9 text-xs"
-                    />
-                    <Input 
-                      value={newCustomerManual.contact} 
-                      onChange={(e) => setNewCustomerManual({...newCustomerManual, contact: e.target.value})} 
-                      placeholder="Contato (WhatsApp/Tel)" 
-                      className="h-9 text-xs"
-                    />
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="h-9 px-3"
-                      onClick={() => {
-                        if (newCustomerManual.name) {
-                          setCustomers([...customers, newCustomerManual])
-                          setNewCustomerManual({ name: '', contact: '' })
-                        }
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                  {customers.map((c, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-secondary/10 p-2 rounded-md border border-secondary/20">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold">{c.name}</span>
-                        {c.contact && <span className="text-[10px] text-muted-foreground">{c.contact}</span>}
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setCustomers(customers.filter((_, i) => i !== idx))}>
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  {customers.length === 0 && (
-                    <p className="text-[10px] text-muted-foreground italic text-center py-2 bg-muted/20 rounded">Adicione pelo menos um cliente.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Interface de Adição de Itens */}
-            <div className="bg-muted/30 p-4 rounded-xl space-y-4 border border-dashed border-primary/20">
-              <div className="flex items-center gap-2 mb-2">
-                <ListPlus className={`w-4 h-4 ${isTakeawayDialogOpen ? 'text-secondary' : 'text-primary'}`} />
-                <span className="text-xs font-black uppercase tracking-widest">Adicionar Item</span>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Produto (Bebida ou Prato)</Label>
-                  <Input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Ex: Coca-cola 350ml" className="h-9" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Preço Un (R$)</Label>
-                    <Input type="number" step="0.01" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} placeholder="0.00" className="h-9" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Qtd</Label>
-                    <Input type="number" value={newItemQty} onChange={(e) => setNewItemQty(e.target.value)} className="h-9" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Etapa do Pedido (Momento)</Label>
-                  <Select value={newItemCourse} onValueChange={(v: any) => setNewItemCourse(v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Bebida">Bebida</SelectItem>
-                      <SelectItem value="Entrada">Entrada</SelectItem>
-                      <SelectItem value="Prato Principal">Prato Principal</SelectItem>
-                      <SelectItem value="Sobremesa">Sobremesa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={handleAddItem} variant="outline" className={`w-full h-9 gap-2 border-2 ${isTakeawayDialogOpen ? 'border-secondary text-secondary hover:bg-secondary/5' : 'border-primary text-primary hover:bg-primary/5'}`}>
-                  <Plus className="w-4 h-4" /> Incluir no Pedido
-                </Button>
+            {/* Categorias */}
+            <div className="space-y-2">
+              <Label className="text-gray-400 text-sm">Categorias de Menu</Label>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {[
+                  { name: 'Bebidas', icon: Coffee },
+                  { name: 'Pratos Principais', icon: Utensils },
+                  { name: 'Entradas', icon: Pizza },
+                  { name: 'Sobremesas', icon: Cake },
+                  { name: 'Outros', icon: MoreHorizontal },
+                ].map((cat) => (
+                  <Button 
+                    key={cat.name}
+                    variant={selectedCategory === cat.name ? 'default' : 'outline'}
+                    onClick={() => setSelectedCategory(cat.name)}
+                    className={`flex flex-col h-20 w-20 ${selectedCategory === cat.name ? 'bg-blue-600 border-blue-400' : 'bg-gray-800 border-gray-700'}`}
+                  >
+                    <cat.icon className="w-6 h-6 mb-1" />
+                    <span className="text-[10px]">{cat.name}</span>
+                  </Button>
+                ))}
               </div>
             </div>
 
-            {/* Listagem de Itens Atuais */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-black uppercase text-muted-foreground">Itens Lançados</span>
-                <Badge variant="outline" className="text-[10px] font-bold">R$ {totalCurrentAmount.toFixed(2)}</Badge>
+            {/* Grid de Produtos */}
+            <div className="grid grid-cols-3 gap-3 h-[300px] overflow-y-auto pr-2">
+              {filteredRecipes && filteredRecipes.length > 0 ? (
+                filteredRecipes.map((p) => (
+                  <Card key={p.id} className="bg-gray-800 border-gray-700 p-2">
+                    <div className="rounded-md h-20 w-full bg-gray-700 mb-2 flex items-center justify-center text-gray-500 text-xs">Foto</div>
+                    <p className="font-bold text-xs truncate text-white">{p.name}</p>
+                    <p className="text-[10px] text-gray-400 mb-2 truncate">R$ {p.totalCost.toFixed(2)}</p>
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-blue-400">R$ {p.totalCost.toFixed(2)}</span>
+                        <Button size="icon" className="h-6 w-6 bg-blue-600 text-white">+</Button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-center text-sm text-gray-400 col-span-3 py-10">Nenhuma ficha técnica nesta categoria.</p>
+              )}
+            </div>
+
+            {/* Resumo */}
+            <div className="border-t border-gray-700 pt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                      <Label className="text-xs text-gray-400">QUANTIDADE</Label>
+                      <Input defaultValue="1" className="bg-gray-800 border-gray-700 text-white"/>
+                  </div>
+                  <div className="space-y-1">
+                      <Label className="text-xs text-gray-400">ETAPA DO PEDIDO</Label>
+                      <Select defaultValue="Prato Principal">
+                          <SelectTrigger className="bg-gray-800 border-gray-700 text-white"><SelectValue/></SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-700 text-white"><SelectItem value="Prato Principal">Prato Principal</SelectItem></SelectContent>
+                      </Select>
+                  </div>
               </div>
               
-              <div className="space-y-2">
-                {currentItems.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 bg-card border rounded-lg shadow-sm">
-                    <div className="flex-1">
-                      <p className="text-sm font-bold">{item.quantity}x {item.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-[8px] h-4 leading-none px-1 uppercase">{item.course}</Badge>
-                        <p className="text-[10px] text-muted-foreground">Subtotal: R$ {(item.price * item.quantity).toFixed(2)}</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(idx)} className="text-destructive h-8 w-8 hover:bg-destructive/10">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                {currentItems.length === 0 && (
-                  <div className="text-center py-6 border-2 border-dashed rounded-lg opacity-40">
-                    <p className="text-xs italic">Nenhum item adicionado.</p>
-                  </div>
-                )}
-              </div>
+              <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white gap-2">
+                  <Plus className="w-4 h-4"/> + Incluir no Pedido
+              </Button>
+              
+              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white gap-2 h-12 text-lg">
+                  <House className="w-5 h-5"/> CONFIRMAR E ENVIAR
+              </Button>
             </div>
           </div>
 
@@ -623,46 +589,6 @@ export default function OrdersPage() {
                 CONFIRMAR E ENVIAR
               </Button>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={isSplitBillDialogOpen} onOpenChange={setIsSplitBillDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-primary" /> Dividir Conta (Mesa {activeTableToSplit?.tableNumber})
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-6 space-y-6">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest">Total da Mesa</p>
-              <p className="text-4xl font-black text-primary">R$ {(activeTableToSplit?.totalAmount || 0).toFixed(2)}</p>
-            </div>
-            
-            <div className="space-y-4 bg-muted/20 p-4 rounded-xl border">
-              <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Pessoas</Label>
-              <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => setOccupantsCount(Math.max(1, occupantsCount - 1))}>-</Button>
-                <div className="flex-1 text-center font-black text-2xl">{occupantsCount}</div>
-                <Button variant="outline" size="icon" onClick={() => setOccupantsCount(occupantsCount + 1)}>+</Button>
-              </div>
-            </div>
-
-            <div className="border-t pt-4 flex justify-between items-center bg-primary/10 p-4 rounded-xl">
-              <span className="font-bold text-sm">Valor por Pessoa:</span>
-              <span className="text-2xl font-black text-primary">
-                R$ {((activeTableToSplit?.totalAmount || 0) / Math.max(1, occupantsCount)).toFixed(2)}
-              </span>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" className="w-full" onClick={() => setIsSplitBillDialogOpen(false)}>FECHAR</Button>
-            <Button className="w-full font-bold" onClick={() => {
-              if (activeTableToSplit && db) {
-                updateDocumentNonBlocking(doc(db, 'restaurants', restaurantId, 'tables', activeTableToSplit.id), { status: 'Aguardando Conta', occupants: occupantsCount })
-                setIsSplitBillDialogOpen(false)
-              }
-            }}>SOLICITAR PAGAMENTO</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
